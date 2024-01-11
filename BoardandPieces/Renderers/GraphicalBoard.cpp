@@ -97,8 +97,10 @@ void GraphicalBoard::initPieceMap() {
 }
 
 input GraphicalBoard::getPlayerInput() {
-
     //TODO implement drag and drop
+    //First find what square the mouse is on, then if clicked pick up the piece,
+    //bind center of piece to mouse pos
+    //place on square when clicked
     return {{0,0},{3,3}};
 }
 

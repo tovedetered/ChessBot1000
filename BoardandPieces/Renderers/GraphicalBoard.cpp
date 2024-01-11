@@ -100,12 +100,12 @@ void GraphicalBoard::initPieceMap() {
     pieceTex.emplace(pieceTable.rook | pieceTable.white, wRook);
 }
 
-input GraphicalBoard::getPlayerInput() {
+fileRank GraphicalBoard::getPlayerInput() {
     //TODO implement drag and drop
     //First find what square the mouse is on, then if clicked pick up the piece,
     //bind center of piece to mouse pos
     //place on square when clicked
-    return {{0,0},{3,3}};
+    return {0,0};
 }
 
 void GraphicalBoard::calculateScaleFactor() {

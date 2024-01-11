@@ -19,10 +19,7 @@ struct square {
     int piece;
 };
 
-struct input {
-    fileRank startSqare;
-    fileRank endSquare;
-};
+
 class GraphicalBoard {
 public:
     GraphicalBoard(int screenWidth, int screenHeight);
@@ -30,6 +27,7 @@ public:
     void init(SquareBoard* board_);
     static bool isRunning();
     static void shutdown();
+    fileRank getPlayerInput();
 private:
     void drawSquare(Color squareColor, Vector2 pos) const;
     void drawPiece(int pieceID, const fileRank pos);
@@ -40,7 +38,6 @@ private:
     int boardSize;
     int squareSize;
 
-    input getPlayerInput();
     pieces pieceTable;
     std::unordered_map<int, Texture> pieceTex;
     float scaleFactor;

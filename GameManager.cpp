@@ -15,6 +15,11 @@ void GameManager::startup() {
 
 void GameManager::mainLoop() {
     while(interface->isRunning()) {
+        //get input
+        fileRank input = interface->getPlayerInput();
+        //update
+
+        //draw
         BeginDrawing();
         interface->renderLoop();
         EndDrawing();

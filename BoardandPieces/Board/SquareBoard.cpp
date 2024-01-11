@@ -143,7 +143,9 @@ void SquareBoard::movePiece(const fileRank start, const fileRank end) {
         std::cerr << "ERROR: Invalid end selected" << std::endl;
         exit(1);
     }
+    //Once we know the move is valid (not checking legality here) we execute it
     const int activePiece = board[access(start.file, start.rank)];
+    board[access(start.file, start.rank)] = pieceTable.none;
     board[access(end.file, end.rank)] = activePiece;
 }
 

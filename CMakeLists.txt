@@ -10,6 +10,8 @@ add_executable(ChessBot1000 main.cpp
         BoardandPieces/Renderers/GraphicalBoard.cpp
         BoardandPieces/Renderers/GraphicalBoard.h
         BoardandPieces/Board/SquareBoard.h
-        BoardandPieces/Board/SquareBoard.cpp)
+        BoardandPieces/Board/SquareBoard.cpp
+        GameManager.cpp
+        GameManager.h)
 
 target_link_libraries(${PROJECT_NAME} raylib)

@@ -27,7 +27,9 @@ class GraphicalBoard {
 public:
     GraphicalBoard(int screenWidth, int screenHeight);
     void renderLoop();
-    void init();
+    void init(SquareBoard* board_);
+    static bool isRunning();
+    static void shutdown();
 private:
     void drawSquare(Color squareColor, Vector2 pos) const;
     void drawPiece(int pieceID, const fileRank pos);

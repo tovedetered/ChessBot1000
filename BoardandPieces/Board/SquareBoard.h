@@ -8,6 +8,7 @@
 #include "../Pieces.h"
 #include <string>
 #include <unordered_map>
+#include <stack>
 
 struct gameStats {
     bool whiteMove; //1 = white to move //0 is black to move
@@ -22,6 +23,10 @@ struct fileRank {
     int rank;
 };
 
+struct moveStats {
+    fileRank start;
+    fileRank end;
+};
 
 class SquareBoard {
 public:
@@ -43,7 +48,8 @@ private:
     std::unordered_map<int, int> realToFakeRank;
     gameStats gameDetails;
 
-
+    std::stack<moveStats> mostRecentMoves;
+    moveStats lastMove;
 };
 
 

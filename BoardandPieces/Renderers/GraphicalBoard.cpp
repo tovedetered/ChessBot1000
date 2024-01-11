@@ -38,12 +38,16 @@ void GraphicalBoard::renderLoop() {
     }
 }
 
-void GraphicalBoard::init() {
+void GraphicalBoard::init(SquareBoard* board_) {
     InitWindow(static_cast<int>(screenDimension.x), static_cast<int>(screenDimension.y), "Chess Bot 1000");
     SetTargetFPS(60);
     initPieceMap();
-    board = new SquareBoard;
+    board = board_;
 }
+
+bool GraphicalBoard::isRunning() {return !WindowShouldClose();}
+
+void GraphicalBoard::shutdown() {CloseWindow();}
 
 void GraphicalBoard::drawSquare(const Color squareColor, const Vector2 pos) const {
     DrawRectangle(static_cast<int>(pos.x),static_cast<int>(pos.y),
@@ -64,7 +68,7 @@ void GraphicalBoard::drawPiece(const int pieceID, const fileRank coordPos) {
     correctedPos.x += xShift;
     const float yShift = ((pos.y + squareSize) - (pos.y + (activeTex.height * scaleFactor)))/2;
     correctedPos.y += yShift;
-    DrawTextureEx(activeTex,correctedPos, 0, scaleFactor, WHITE);
+    DrawTextureEx(activeTex,correctedPos, 0, scaleFactor, RAYWHITE);
 }
 
 void GraphicalBoard::initPieceMap() {

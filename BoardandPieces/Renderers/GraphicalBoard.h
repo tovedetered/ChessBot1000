@@ -19,11 +19,6 @@ struct square {
     int piece;
 };
 
-struct fileRank {
-    int file;
-    int rank;
-};
-
 struct input {
     fileRank startSqare;
     fileRank endSquare;

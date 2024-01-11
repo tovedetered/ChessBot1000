@@ -17,12 +17,20 @@ struct gameStats {
     int fullMoves;
 };
 
+struct fileRank {
+    int file;
+    int rank;
+};
+
+
 class SquareBoard {
 public:
     SquareBoard();
     void readFromFen(std::string fenString);
     static int access(int file, int rank); //x,y
     [[nodiscard]] int getPieceAtValue(int index) const;
+
+    void movePiece(fileRank start, fileRank end);
 private:
     int board[64];
     pieces pieceTable;

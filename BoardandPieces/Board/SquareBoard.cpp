@@ -134,6 +134,19 @@ int SquareBoard::access(const int file, const int rank) {return file + 8 * rank;
 
 int SquareBoard::getPieceAtValue(const int index) const {return board[index];}
 
+void SquareBoard::movePiece(const fileRank start, const fileRank end) {
+    if(start.file > 7 || start.rank > 7 || start.file < 0 || start.rank < 0) {
+        std::cerr << "ERROR: Invalid start selected" << std::endl;
+        exit(1);
+    }
+    if(end.file > 7 || end.rank > 7 || end.file < 0 || end.rank < 0) {
+        std::cerr << "ERROR: Invalid end selected" << std::endl;
+        exit(1);
+    }
+    const int activePiece = board[access(start.file, start.rank)];
+    board[access(end.file, end.rank)] = activePiece;
+}
+
 void SquareBoard::initFenToID() {
     fenToID.emplace('p', pieceTable.pawn | pieceTable.black);
     fenToID.emplace('P', pieceTable.pawn | pieceTable.white);

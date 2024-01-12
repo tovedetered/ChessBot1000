@@ -105,7 +105,16 @@ fileRank GraphicalBoard::getPlayerInput() {
     //First find what square the mouse is on, then if clicked pick up the piece,
     //bind center of piece to mouse pos
     //place on square when clicked
-    return {0,0};
+    if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+        int file = GetMouseX()/squareSize;
+        int rank = GetMouseY()/squareSize;
+        return {file, rank};
+    }
+    if(IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
+        return {9,9};
+    }
+
+    return {30,30}; //30,30 is do nothing
 }
 
 void GraphicalBoard::calculateScaleFactor() {

@@ -9,6 +9,7 @@
 #include <string>
 #include <unordered_map>
 #include <stack>
+#include <vector>
 
 struct gameStats {
     bool whiteMove; //1 = white to move //0 is black to move
@@ -33,9 +34,13 @@ public:
     SquareBoard();
     void readFromFen(std::string fenString);
     static int access(int file, int rank); //x,y
+    static fileRank reverseAccess(int index);
     [[nodiscard]] int getPieceAtValue(int index) const;
 
     void movePiece(fileRank start, fileRank end);
+    bool isLegalMove(fileRank start, fileRank end);
+
+    void generateMoves();
 private:
     int board[64];
     pieces pieceTable;
@@ -50,6 +55,15 @@ private:
 
     std::stack<moveStats> mostRecentMoves;
     moveStats lastMove;
+
+    std::vector<std::vector<int>> numSquareToEdge;
+    const int directionOffset[8] = {-8, 1, 8, -1, -7, 9, 7, -9}; //N,E,S,W,NE,SE,SW,NW
+    void precomputeMoveData();
+    std::vector<moveStats> legalMoves;
+
+    std::vector<moveStats> generatePawnMoves(int activePos) const;
+    std::vector<moveStats> generateKnightMoves(int activePos) const;
+    std::vector<moveStats> generateSlidingMoves(int pos) const;
 };
 
 

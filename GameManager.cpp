@@ -14,11 +14,55 @@ void GameManager::startup() {
 }
 
 void GameManager::mainLoop() {
+    bool playerWhite = true;
+    bool whiteTurn = true;
+    bool completeMove = false;
+    bool moveStart = false;
+    bool movesGenerated = false;
+    moveStats move{};
     while(interface->isRunning()) {
+        //Generate Moves
+        if(!movesGenerated) {
+            board->generateMoves();
+            movesGenerated = true;
+        }
         //get input
-        fileRank input = interface->getPlayerInput();
+        if(((playerWhite && whiteTurn) || (!playerWhite && !whiteTurn)) && !completeMove) {
+            fileRank input = interface->getPlayerInput();
+            if(input.file == 30) {
+                goto Draw;
+            }
+            if(input.file == 9 && moveStart) {
+                moveStart = false;
+                continue;
+            }
+            if(!moveStart) {
+                move.start = input;
+                moveStart = true;
+            }
+            else {
+                move.end = input;
+                moveStart = false;
+                completeMove = true;
+            }
+        }
+        else {
+            //get robot move
+        }
         //update
 
+        if(completeMove) {
+            if(board->isLegalMove(move.start, move.end)) {
+                board->movePiece(move.start, move.end);
+                whiteTurn = ~whiteTurn;
+                movesGenerated = false;
+            }
+
+            move.end = {0,0};
+            move.start = {0,0};
+            completeMove = false;
+        }
+        Draw:
         //draw
         BeginDrawing();
         interface->renderLoop();

@@ -19,13 +19,9 @@ void GameManager::mainLoop() {
     bool completeMove = false;
     bool moveStart = false;
     bool movesGenerated = false;
-    moveStats move{};
+    move_stats move{};
     while(interface->isRunning()) {
         //Generate Moves
-        if(!movesGenerated) {
-            board->generateMoves();
-            movesGenerated = true;
-        }
         //get input
         if(((playerWhite && whiteTurn) || (!playerWhite && !whiteTurn)) && !completeMove) {
             fileRank input = interface->getPlayerInput();
@@ -52,9 +48,9 @@ void GameManager::mainLoop() {
         //update
 
         if(completeMove) {
-            if(board->isLegalMove(move.start, move.end)) {
+            if(board->isLegalMove(move.start, move.end) || false /*TODO: Players.bothBots?*/) {
                 board->movePiece(move.start, move.end);
-                whiteTurn = ~whiteTurn;
+                whiteTurn = !whiteTurn;
                 movesGenerated = false;
             }
 

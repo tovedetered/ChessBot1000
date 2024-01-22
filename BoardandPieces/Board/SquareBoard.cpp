@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include <unordered_set>
 
 SquareBoard::SquareBoard() {
     initFenToID();
@@ -13,17 +14,17 @@ SquareBoard::SquareBoard() {
     initRankMap();
     readFromFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
     precomputeMoveData();
+
 }
 
-void SquareBoard::readFromFen(std::string fenString) {
+void SquareBoard::readFromFen(const std::string& fenString) {
     //starting pos
     //rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
     int file = 0;
     int rank = 0;
     int j = 0;
     //get position
-    for(int i = 0; i < fenString.size(); i++) {
-        char token = fenString[i];
+    for(char token : fenString) {
         if(token == ' ') {
             j++;
             break;
@@ -42,6 +43,12 @@ void SquareBoard::readFromFen(std::string fenString) {
         }
         if(std::isalpha(token)) {
             board[access(file, rank)] = fenToID[token];
+            if(token == 'k') {
+                kingsPos[0] = {file, rank};
+            }
+            else if(token == 'K') {
+                kingsPos[1] = {file, rank};
+            }
             file ++;
         }
         j++;
@@ -134,7 +141,6 @@ void SquareBoard::readFromFen(std::string fenString) {
 
 int SquareBoard::access(const int file, const int rank) {return file + 8 * rank;}
 
-
 //10 = 2 + (8*1)
 
 fileRank SquareBoard::reverseAccess(const int index) {
@@ -156,6 +162,11 @@ void SquareBoard::movePiece(const fileRank start, const fileRank end) {
     }
     //Once we know the move is valid (not checking legality here) we execute it
     const int activePiece = board[access(start.file, start.rank)];
+    if(pieces::isKing(activePiece)) {
+        if(pieces::isColorToMove(activePiece, white))
+            kingsPos[1] = end;
+        else kingsPos[0] = end;
+    }
     board[access(start.file, start.rank)] = pieceTable.none;
     board[access(end.file, end.rank)] = activePiece;
 }
@@ -226,127 +237,3 @@ void SquareBoard::precomputeMoveData() {
         }
     }
 }
-
-void SquareBoard::generateMoves() {
-    for(int startSquare = 0; startSquare < 64; startSquare++) {
-        if(const int piece = board[startSquare]; pieces::isColorToMove(piece, gameDetails.whiteMove)) {
-            if(pieces::isPawn(piece)) {
-                if(std::vector<moveStats> pawnMove = generatePawnMoves(startSquare);
-                    !pawnMove.empty())
-                    legalMoves.insert(legalMoves.end(),
-                        pawnMove.begin(),pawnMove.end());
-            }
-            else if(pieces::isKnight(piece)) {
-                if(std::vector<moveStats> knightMove = generateKnightMoves(startSquare);
-                    !knightMove.empty()) {
-                    legalMoves.insert(legalMoves.end(), knightMove.begin(), knightMove.end());
-                }
-            }
-            else if(pieces::isSlidingPiece(piece)) {
-                if(std::vector<moveStats> slidingMove = generateSlidingMoves(startSquare);
-                    !slidingMove.empty())
-                    legalMoves.insert(legalMoves.end(),
-                        slidingMove.begin(), slidingMove.end());
-            }
-            //then King
-            //Then Check
-        }
-    }
-}
-
-std::vector<moveStats> SquareBoard::generatePawnMoves(const int activePos) const {
-    std::vector<moveStats> moves;
-    short northMultiplier = 1;
-    if(!gameDetails.whiteMove) {
-        northMultiplier = -1;
-    }
-    fileRank activeFileRank = reverseAccess(activePos);
-    const int forwardOneIndex = activePos + (directionOffset[0] * northMultiplier);
-    const int forwardTwoIndex = activePos + 2 * (directionOffset[0] * northMultiplier);
-    if(board[forwardOneIndex] < 1) {
-        moves.push_back({{activeFileRank}, {reverseAccess(forwardOneIndex)}});
-        if((activePos > 7 && activePos < 16) && forwardTwoIndex < 1) {
-            moves.push_back({{activeFileRank}, {reverseAccess(forwardOneIndex)}});
-        }
-    }
-    const bool forwardRight = activePos%8 < 7;
-    int forwardRightIndex = 0;
-    if(forwardRight)  forwardRightIndex = activePos + (directionOffset[4] * northMultiplier);
-
-    const bool forwardLeft = activePos%8 > 0;
-    int forwardLeftIndex = 0;
-    if(forwardLeft) forwardLeftIndex = activePos + (directionOffset[7] * northMultiplier);
-    if(forwardRight && !pieces::isColorToMove(board[forwardRightIndex], gameDetails.whiteMove)) {
-        moves.push_back({{activeFileRank}, {reverseAccess(forwardRightIndex)}});
-    }
-    if(forwardLeft && !pieces::isColorToMove(board[forwardLeftIndex], gameDetails.whiteMove)) {
-        moves.push_back({{activeFileRank},{reverseAccess(forwardLeftIndex)}});
-    }
-    return moves;
-}
-
-std::vector<moveStats> SquareBoard::generateKnightMoves(const int activePos) const {
-    std::vector<moveStats> moves;
-    std::vector<int> targetMoves;
-    fileRank fileRankPos = reverseAccess(activePos);
-    //up 2 over 1
-    //2N 1E
-    if(activePos%8 <7 && activePos/8 < 6)
-        targetMoves.push_back(activePos + (2 * directionOffset[0]) + directionOffset[1]);
-    //2E 1N
-    if(activePos%8 < 6 && activePos/8 < 7)
-        targetMoves.push_back(activePos + (2*directionOffset[1]) + directionOffset[0]);
-    //2E 1S
-    if(activePos%8 < 6 && activePos/8 > 0)
-        targetMoves.push_back(activePos + 2*directionOffset[1] + directionOffset[2]);
-    //2S 1E
-    if(activePos%8 < 7 && activePos/8 > 1)
-        targetMoves.push_back(activePos + 2*directionOffset[2] + directionOffset[1]);
-    // 2S 1W
-    if(activePos%8 > 0 && activePos/8 > 1)
-        targetMoves.push_back(activePos + 2 * directionOffset[2] - directionOffset[1]);
-    // 2W 1S
-    if(activePos%8 > 1 && activePos/8 > 0)
-        targetMoves.push_back(activePos + 2 * directionOffset[3] - directionOffset[2]);
-    // 2W 1N
-    if(activePos%8 > 1 && activePos/8 < 7)
-        targetMoves.push_back(activePos + 2 * directionOffset[3] + directionOffset[1]);
-    // 2N 1W
-    if(activePos%8 > 0 && activePos/8 < 6)
-        targetMoves.push_back(activePos + 2 * directionOffset[0] - directionOffset[1]);
-
-    //check the moves for friendly pices
-    for(int move : targetMoves) {
-        if(!pieces::isColorToMove(board[move], gameDetails.whiteMove)) {
-            moves.push_back({{fileRankPos}, {reverseAccess(move)}});
-        }
-    }
-    return moves;
-}
-
-std::vector<moveStats> SquareBoard::generateSlidingMoves(const int pos) const {
-    std::vector<moveStats> moves;
-    fileRank filePosRank = reverseAccess(pos);
-    int startDir = 0;
-    int endDir = 8;
-    if(pieces::isBishop(board[pos])) startDir = 4;
-    if(pieces::isRook(board[pos])) endDir = 4;
-
-    for(int direction = startDir; direction < endDir; direction++) {
-        for(int n = 0; n < numSquareToEdge[pos][direction]; n++) {
-            const int targetSquare = pos + directionOffset[direction] * (n + 1);
-            const int pieceOnSquare = board[targetSquare];
-
-            if(pieces::isColorToMove(pieceOnSquare, gameDetails.whiteMove)) {
-                break;
-            }
-            moves.push_back({{filePosRank},{reverseAccess(targetSquare)}});
-            if(!pieces::isColorToMove(pieceOnSquare, gameDetails.whiteMove) && pieceOnSquare > 0) {
-                break;
-            }
-        }
-    }
-
-    return moves;
-}
-

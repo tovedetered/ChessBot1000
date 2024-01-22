@@ -6,24 +6,26 @@
 #define PIECES_H
 
 struct pieces {
-    const int none = 0; //00 000
-    const int king = 1; //00 001
-    const int pawn = 2; //00 010
-    const int knight = 3; //00 011
-    const int bishop = 4; //00 100
-    const int rook = 5; //00 101
-    const int queen = 6; //00 110
+    const int none = 0b000; //00 000
+    const int king = 0b001; //00 001
+    const int pawn = 0b010; //00 010
+    const int knight = 0b011; //00 011
+    const int bishop = 0b100; //00 100
+    const int rook = 0b101; //00 101
+    const int queen = 0b110; //00 110
 
-    const int white = 8; //01 000
-    const int black = 16; //10 000
+    const int white = 0b01000; //01 000
+    const int black = 0b10000; //10 000
 
+    const int typeMask = 0b00111;
+    const int colorMask = 0b11000;
+    const int locMask = 0b11111100000;
     static bool isColorToMove(int piece, bool color) {
         if(piece == 0) return false;
         if(piece > 16 && !color) return true;
         if(piece < 16 && color) return true;
         return false;
     }
-
     static bool isPawn(const int piece) {
         if(piece == 10 || piece == 18) return true;
         return false;

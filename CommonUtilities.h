@@ -15,15 +15,31 @@ struct piece_data {
 //80 = white Queenside
 //90 = black Kingside
 //100 = black Queenside
+enum moveFlag {
+    normal,
+    whiteKingSide,
+    whiteQueenSide,
+    blackKingSide,
+    blackQueenSide,
+    enPassantCapture,
+    twoSquarePawnMove,
+    promoteToQueen,
+    promoteToRook,
+    promoteToBishop,
+    promoteToKnight,
+};
+
 struct move {
-    int startIndex;
-    int endIndex;
+    int startIndex = -1;
+    int endIndex = -1;
+    moveFlag flag = normal;
 };
 
 struct gameState {
     bool colorMove;
     //0 none, 0b0001 white kingside,0010 white queenside, 0100 black Kingside,1000 black queenside
     int castleAbility;
+    //-1 = no en Passant
     int enPassantIndex;
     int fiftyPlyCount;
     int totalPly;

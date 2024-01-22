@@ -23,6 +23,7 @@ struct positionDetails {
     int opponentKingIndex;
     //0 wks, 1 wqs, 2 bks, 3 bqs
     bool castleAbility[4];
+    int enPassantIndex;
 
     void clear() {
         inCheck = false;
@@ -35,6 +36,7 @@ struct positionDetails {
         opponentcolor = static_cast<color>(0);
         activeKingIndex = 0;
         opponentKingIndex = 0;
+        enPassantIndex = -1;
         std::fill(std::begin(castleAbility), std::end(castleAbility), false);
     }
 };
@@ -82,6 +84,8 @@ private:
     void generateKnightAttack(int activePos);
 
     void generatePawnAttack(int activePos, color activeColor);
+    void generatePawnMoves();
+    void generatePromoionMoves(int targetSquare, int startSquare);
 
     void generateKingAttack(int activePos);
     void generateKingMoves();

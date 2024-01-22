@@ -2,6 +2,31 @@
 // Created by tobedetered on 1/13/24.
 //
 
+
+
+//Heaily Inspired by / C++ port of Sebastian Lauge's V1 ChessBot
+/*MIT License
+
+Copyright (c) 2021 Sebastian Lague
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.*/
+
 #include "MoveGenerator.h"
 
 #include <iostream>
@@ -28,6 +53,7 @@ std::vector<move> MoveGenerator::generateMoves() {
         return legalMoves;
     }
     generateSlidingMoves();
+
     return legalMoves;
 }
 
@@ -267,9 +293,22 @@ void MoveGenerator::calcSlideAttackMap() {
 }
 
 void MoveGenerator::generateSlidingMoves() {
-    const std::vector<piece_data> opponentRooks = board->getPiceColorList(rook, position.opponentcolor);
+    const std::vector<piece_data> opponentRooks =
+        board->getPiceColorList(rook, position.opponentcolor);
     for(piece_data rook : opponentRooks) {
         generateSlideMove(rook.index, 0, 4);
+    }
+
+    const std::vector<piece_data> opponentBishops =
+        board->getPiceColorList(bishop, position.opponentcolor);
+    for(piece_data bishop : opponentBishops) {
+        generateSlideMove(bishop.index, 4, 8);
+    }
+
+    const std::vector<piece_data> opponentQueens =
+        board->getPiceColorList(queen, position.opponentcolor);
+    for(auto queen : opponentQueens) {
+        generateSlideMove(queen.index, 0,8);
     }
 }
 
@@ -291,7 +330,12 @@ void MoveGenerator::generateSlideMove(int activePos, int startDirIndex, int endD
             if(board->isColor(targetPiece, position.friendlyColor)) break;
             bool capture = targetPiece == 0;
             bool stopCheck = position.inCheck? checkValueAtPos(position.checkRayMask, targetSquare) !=0:false;
-
+            if(stopCheck || !position.inCheck) {
+                legalMoves.push_back({activePos, targetSquare});
+            }
+            if(capture || stopCheck) {
+                break;
+            }
         }
     }
 }
@@ -401,6 +445,74 @@ void MoveGenerator::generatePawnAttack(const int activePos, const color activeCo
     }
 }
 
+void MoveGenerator::generatePawnMoves() {
+    const std::vector<piece_data> pawns = board->getPiceColorList(pawn, position.friendlyColor);
+    int pawnForwards = position.friendlyColor == white? -8:8;
+    int startRank = position.friendlyColor == white? 1:6;
+    int promoteFlagRank = position.friendlyColor == white? 6:1;
+
+    for(piece_data pawn : pawns) {
+        bool promoteFlag = promoteFlagRank == pawn.index/8;
+        int targetSquare = pawn.index + pawnForwards;
+        if(board->getPieceAtSquare(targetSquare) == none) {
+            if(checkValueAtPos(position.pinRayMask,pawn.index) ||
+                IsMoveAlongRay(pawnForwards, pawn.index, position.activeKingIndex)) {
+                if(!position.inCheck || checkValueAtPos(position.checkRayMask, targetSquare)) {
+                    if(promoteFlagRank) {
+                        generatePromoionMoves(targetSquare, pawn.index);
+                    }
+                    else {
+                        legalMoves.push_back({pawn.index, targetSquare});
+                    }
+                }
+                if(pawn.index/8 == startRank) {
+                    int targetTwo = targetSquare + pawnForwards;
+                    if(board->getPieceAtSquare(targetTwo) == none) {
+                        if(!position.inCheck || checkValueAtPos(position.checkRayMask, targetTwo)) {
+                            legalMoves.push_back({pawn.index, targetTwo, twoSquarePawnMove});
+                        }
+                    }
+                }
+            }
+        }
+        struct enPassDetails {
+            int target;
+            int dirOffset;
+        };
+        std::vector<enPassDetails> enPassTargets;
+        color activeColor = position.friendlyColor;
+        const int dirMultiplier = activeColor == white ? 1:-1;
+        //need to make sure that they are not at edges of board
+        if(pieceOnEdge[pawn.index] != (leftEdge | upperLeftCorner | lowerLeftCorner)) {
+            const int forwardLeft = directionOffset[3] + directionOffset[0] * dirMultiplier;
+             enPassTargets.push_back({forwardLeft + pawn.index, forwardLeft});
+        }
+        if(pieceOnEdge[pawn.index] != (rightEdge | upperRightCorner | lowerRightCorner)) {
+            const int forwardRight = directionOffset[1] + directionOffset[0] * dirMultiplier;
+            enPassTargets.push_back({forwardRight + pawn.index, forwardRight});
+        }
+        for(auto [target, dirOffset] : enPassTargets) {
+            if(checkValueAtPos(position.pinRayMask, pawn.index) &&
+                !IsMoveAlongRay(dirOffset, position.activeKingIndex, pawn.index)) {
+                continue;
+            }
+            if(board->isColor(board->getPieceAtSquare(target), position.opponentcolor)) {
+                if(position.inCheck && !checkValueAtPos(position.checkRayMask, target)) {
+                    continue;
+                }
+                if(promoteFlag) {
+                    generatePromoionMoves(target, pawn.index);
+                }
+                else {
+                    legalMoves.push_back({pawn.index, target});
+                }
+            }
+        }
+    }
+
+
+}
+
 void MoveGenerator::generateKingAttack(const int activePos) {
     for(int i = 0; i < 8; i++) {
         if(numSquareToEdge[activePos][i] !=0) {
@@ -444,20 +556,20 @@ void MoveGenerator::generateKingMoves() {
                 !checkValueAtPos(attackMap, passThroughIndex)) {
                 if(board->getPieceAtSquare(targetIndex) == 0 &&
                     board->getPieceAtSquare(passThroughIndex) == 0) {
-                    legalMoves.push_back({position.activeKingIndex,
-                        fColor == white ? 70 : 90});
+                    legalMoves.push_back({position.activeKingIndex,targetIndex,
+                    fColor == white? whiteKingSide:blackKingSide});
                 }
             }
         }
         if(queenside) {
-            int targetIndex = position.activeKingIndex - 2; //right two
+            int targetIndex = position.activeKingIndex - 2; //left two
             int passThroughIndex = position.activeKingIndex - 1; //need to check both
             if(!checkValueAtPos(attackMap, targetIndex) &&
                 !checkValueAtPos(attackMap, passThroughIndex)) {
                 if(board->getPieceAtSquare(targetIndex) == 0 &&
                     board->getPieceAtSquare(passThroughIndex) == 0) {
-                    legalMoves.push_back({position.activeKingIndex,
-                        fColor == white ? 80 : 100});
+                    legalMoves.push_back({position.activeKingIndex,targetIndex,
+                        fColor == white? whiteQueenSide:blackQueenSide});
                     }
                 }
         }

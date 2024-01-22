@@ -77,19 +77,21 @@ private:
     void generateSlidingMoves();
     void generateSlideMove(int activePos, int startDirIndex, int endDirIndex);
     void updateAttackMap(int startSquare, int dirStart, int dirEnd);
-    std::vector<move> generateAllKnightMoves();
+
     std::vector<move> generateKnightMove(int activePos) const;
     void generateKnightAttack(int activePos);
+
     void generatePawnAttack(int activePos, color activeColor);
+
     void generateKingAttack(int activePos);
     void generateKingMoves();
+
     const int directionOffset[8] = {-8, 1, 8, -1, -7, 9, 7, -9}; //N,E,S,W,NE,SE,SW,NW
-    //0 wks, 1 wqs, 2 bks, 3 bqs
-    int castleIndicies[4] = {};
     void precomputeMoveData();
     std::vector<std::vector<int>> numSquareToEdge;
     static int access(int file, int rank); //x,y
     bool ableToMoveInDir(int piece_, bool diagonalMovement) const;
+    bool IsMoveAlongRay(int dir, int start, int target) const;
 };
 
 

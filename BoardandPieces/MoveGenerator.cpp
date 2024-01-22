@@ -115,6 +115,48 @@ bool MoveGenerator::ableToMoveInDir(const int piece_, const bool diagonalMovemen
     if(!diagonalMovement && (pieceType == rook || pieceType == queen)) return true;
     return false;
 }
+// This is terrible
+bool MoveGenerator::IsMoveAlongRay(int dir, int start, const int target) const {
+    //stupid way
+    //always down to the left
+    int startOfRay;
+    int numOfSquareInRay;
+    //up or down
+    if(dir == 8 || dir == -8) {
+        int numToEdge = numSquareToEdge[start][2];
+        startOfRay = start + numToEdge(-8);
+        numOfSquareInRay = numSquareToEdge[startOfRay][8];
+    }
+    else if(dir == -1 || dir == 1) {
+        //N,E,S,W,NE,SE,SW,NW
+        int numToEdge = numSquareToEdge[start][3];
+        startOfRay = start + numToEdge(-1);
+        numOfSquareInRay = numSquareToEdge[startOfRay][1];
+    }
+    else if (dir == -7 || dir == 7) {
+        int numToEdge = numSquareToEdge[start][6];
+        startOfRay = start + numToEdge(-7);
+        numOfSquareInRay = numSquareToEdge[startOfRay][7];
+    }
+    else {
+        int numToEdge = numSquareToEdge[start][7];
+        startOfRay = start + numToEdge(-9);
+        numOfSquareInRay = numSquareToEdge[startOfRay][9];
+    }
+    for(int i = 0; i < numOfSquareInRay; i++) {
+        int targetSquare = startOfRay + dir(i);
+        if(targetSquare == target) {
+            return true;
+        }
+    }
+    return false;
+
+
+    //need to find the direction
+    //int moveDirection = 0;
+    //then check it
+    //return (dir == moveDirection || -dir == moveDirection);
+}
 
 void MoveGenerator::calcAttackMap() {
     calcSlideAttackMap();
@@ -232,7 +274,26 @@ void MoveGenerator::generateSlidingMoves() {
 }
 
 void MoveGenerator::generateSlideMove(int activePos, int startDirIndex, int endDirIndex) {
+    bool pinned = checkValueAtPos(position.pinRayMask, activePos);
+    if(pinned && position.inCheck) {
+        return;
+    }
 
+    for(int i = startDirIndex; i < endDirIndex; i++) {
+        int currentDirOffset = directionOffset[i];
+        if(pinned && !IsMoveAlongRay(currentDirOffset, position.activeKingIndex, activePos)) {
+            continue;
+        }
+        for(int n = 0; n < numSquareToEdge[activePos][i]; n++) {
+            int targetSquare = activePos + currentDirOffset * (n+1);
+            int targetPiece = board->getPieceAtSquare(targetSquare);
+
+            if(board->isColor(targetPiece, position.friendlyColor)) break;
+            bool capture = targetPiece == 0;
+            bool stopCheck = position.inCheck? checkValueAtPos(position.checkRayMask, targetSquare) !=0:false;
+
+        }
+    }
 }
 
 void MoveGenerator::updateAttackMap(int startSquare, int dirStart, int dirEnd) {

@@ -27,7 +27,7 @@ std::vector<move> MoveGenerator::generateMoves() {
     if(position.inDoubleCheck) {
         return legalMoves;
     }
-
+    generateSlidingMoves();
     return legalMoves;
 }
 
@@ -224,6 +224,17 @@ void MoveGenerator::calcSlideAttackMap() {
     }
 }
 
+void MoveGenerator::generateSlidingMoves() {
+    const std::vector<piece_data> opponentRooks = board->getPiceColorList(rook, position.opponentcolor);
+    for(piece_data rook : opponentRooks) {
+        generateSlideMove(rook.index, 0, 4);
+    }
+}
+
+void MoveGenerator::generateSlideMove(int activePos, int startDirIndex, int endDirIndex) {
+
+}
+
 void MoveGenerator::updateAttackMap(int startSquare, int dirStart, int dirEnd) {
     for(int dirIndex = dirStart; dirIndex < dirEnd; dirIndex++) {
         const int dirOff = directionOffset[dirIndex];
@@ -338,12 +349,56 @@ void MoveGenerator::generateKingAttack(const int activePos) {
 }
 
 void MoveGenerator::generateKingMoves() {
+    std::vector<int> targetSquares;
     for(int i = 0; i < 8; i++) {
         if(numSquareToEdge[position.activeKingIndex][i] !=0) {
             if(const int index = directionOffset[1] + position.activeKingIndex;
                 board->getPieceColor(board->getPieceAtSquare(index)) != position.friendlyColor) {
-                legalMoves.push_back({position.activeKingIndex, index});
+                targetSquares.push_back(index);
             }
+        }
+    }
+    //Now check to see if they are legal
+    for(int target : targetSquares) {
+        bool capture = board->isColor(board->getPieceAtSquare(target), position.opponentcolor);
+        if(!capture) {
+            if(checkValueAtPos(position.checkRayMask, target)) {
+                continue;
+            }
+        }
+        //if the square is not attacked
+        if(!checkValueAtPos(attackMap, target)) {
+            legalMoves.push_back({position.activeKingIndex, target});
+        }
+    }
+    //Now Castleing
+    if(!position.inCheck) {
+        color fColor = position.friendlyColor;
+        bool kingside = fColor == white ? position.castleAbility[0] : position.castleAbility[2];
+        bool queenside = fColor == white ? position.castleAbility[1] : position.castleAbility[3];
+        if(kingside) {
+            int targetIndex = position.activeKingIndex + 2; //right two
+            int passThroughIndex = position.activeKingIndex + 1; //need to check both
+            if(!checkValueAtPos(attackMap, targetIndex) &&
+                !checkValueAtPos(attackMap, passThroughIndex)) {
+                if(board->getPieceAtSquare(targetIndex) == 0 &&
+                    board->getPieceAtSquare(passThroughIndex) == 0) {
+                    legalMoves.push_back({position.activeKingIndex,
+                        fColor == white ? 70 : 90});
+                }
+            }
+        }
+        if(queenside) {
+            int targetIndex = position.activeKingIndex - 2; //right two
+            int passThroughIndex = position.activeKingIndex - 1; //need to check both
+            if(!checkValueAtPos(attackMap, targetIndex) &&
+                !checkValueAtPos(attackMap, passThroughIndex)) {
+                if(board->getPieceAtSquare(targetIndex) == 0 &&
+                    board->getPieceAtSquare(passThroughIndex) == 0) {
+                    legalMoves.push_back({position.activeKingIndex,
+                        fColor == white ? 80 : 100});
+                    }
+                }
         }
     }
 }

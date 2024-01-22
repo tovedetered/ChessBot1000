@@ -11,7 +11,10 @@ struct piece_data {
     int piece;
     int index;
 };
-
+//end Index 70 = white Kingside
+//80 = white Queenside
+//90 = black Kingside
+//100 = black Queenside
 struct move {
     int startIndex;
     int endIndex;

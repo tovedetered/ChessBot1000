@@ -41,6 +41,7 @@ MoveGenerator::MoveGenerator(Board* board) {
     knightAttackMap = 0;
     kingAttackMap = 0;
     pawnAttackMap = 0;
+    pawnsPinned = 0;
 }
 
 std::vector<move> MoveGenerator::generateMoves() {
@@ -64,7 +65,6 @@ void MoveGenerator::initPieceOnEdge() {
         //if on left edge, ie file = 0
         const int file = i%8;
         const int rank = i/8;
-        bool notOnFileSide = false;
         if(file < 1) {
             if(rank < 1) {
                 pieceOnEdge.emplace(i, upperLeftCorner);
@@ -179,8 +179,7 @@ bool MoveGenerator::IsMoveAlongRay(int dir, int start, const int target) const {
         numOfSquareInRay = numSquareToEdge[startOfRay][9];
     }
     for(int i = 0; i < numOfSquareInRay; i++) {
-        int targetSquare = startOfRay + dir(i);
-        if(targetSquare == target) {
+        if(const int targetSquare = startOfRay + dir(i); targetSquare == target) {
             return true;
         }
     }
@@ -204,7 +203,7 @@ void MoveGenerator::calcAttackMap() {
     }
     //for every direction check to see if a piece that could be attacking is
     for(int i = startDir; i < endDir; i++) {
-        bool diag = i > 3;
+        const bool diag = i > 3;
         const int numSquare = numSquareToEdge[position.activeKingIndex][i];
         bool friendInDir = false;
         bool enPassFlag = false;
@@ -249,9 +248,7 @@ void MoveGenerator::calcAttackMap() {
                         if(board->getPieceType(targetPiece) == pawn && enPassFlag) freindPawnInDir = true;
                         friendInDir = true;
                     }
-                    else {
-                        enPassFlag = false;
-                        freindPawnInDir = false;
+                    else {;
                         break;
                     }
                 }
@@ -335,15 +332,15 @@ void MoveGenerator::calcSlideAttackMap() {
 
     //loop through all of the sliding pieces and update the map
     const std::vector<piece_data> opponentRooks = board->getPiceColorList(rook, position.opponentcolor);
-    for(piece_data rook : opponentRooks) {
+    for(const piece_data rook : opponentRooks) {
         updateAttackMap(rook.index, 0, 4);
     }
     const std::vector<piece_data> opponentBishops = board->getPiceColorList(bishop, position.opponentcolor);
-    for(piece_data bishop : opponentBishops) {
+    for(const piece_data bishop : opponentBishops) {
         updateAttackMap(bishop.index, 4, 8);
     }
     const std::vector<piece_data> opponentQueens = board->getPiceColorList(queen, position.opponentcolor);
-    for(piece_data queen : opponentQueens) {
+    for(const piece_data queen : opponentQueens) {
         updateAttackMap(queen.index, 0, 8);
     }
 }
@@ -351,41 +348,41 @@ void MoveGenerator::calcSlideAttackMap() {
 void MoveGenerator::generateSlidingMoves() {
     const std::vector<piece_data> opponentRooks =
         board->getPiceColorList(rook, position.opponentcolor);
-    for(piece_data rook : opponentRooks) {
+    for(const piece_data rook : opponentRooks) {
         generateSlideMove(rook.index, 0, 4);
     }
 
     const std::vector<piece_data> opponentBishops =
         board->getPiceColorList(bishop, position.opponentcolor);
-    for(piece_data bishop : opponentBishops) {
+    for(const piece_data bishop : opponentBishops) {
         generateSlideMove(bishop.index, 4, 8);
     }
 
     const std::vector<piece_data> opponentQueens =
         board->getPiceColorList(queen, position.opponentcolor);
-    for(auto queen : opponentQueens) {
+    for(const auto queen : opponentQueens) {
         generateSlideMove(queen.index, 0,8);
     }
 }
 
 void MoveGenerator::generateSlideMove(int activePos, int startDirIndex, int endDirIndex) {
-    bool pinned = checkValueAtPos(position.pinRayMask, activePos);
+    const bool pinned = checkValueAtPos(position.pinRayMask, activePos);
     if(pinned && position.inCheck) {
         return;
     }
 
     for(int i = startDirIndex; i < endDirIndex; i++) {
-        int currentDirOffset = directionOffset[i];
+        const int currentDirOffset = directionOffset[i];
         if(pinned && !IsMoveAlongRay(currentDirOffset, position.activeKingIndex, activePos)) {
             continue;
         }
         for(int n = 0; n < numSquareToEdge[activePos][i]; n++) {
-            int targetSquare = activePos + currentDirOffset * (n+1);
-            int targetPiece = board->getPieceAtSquare(targetSquare);
+            const int targetSquare = activePos + currentDirOffset * (n+1);
+            const int targetPiece = board->getPieceAtSquare(targetSquare);
 
             if(board->isColor(targetPiece, position.friendlyColor)) break;
-            bool capture = targetPiece == 0;
-            bool stopCheck = position.inCheck? checkValueAtPos(position.checkRayMask, targetSquare) !=0:false;
+            const bool capture = targetPiece == 0;
+            const bool stopCheck = position.inCheck? checkValueAtPos(position.checkRayMask, targetSquare) !=0:false;
             if(stopCheck || !position.inCheck) {
                 legalMoves.push_back({activePos, targetSquare});
             }
@@ -401,7 +398,7 @@ void MoveGenerator::updateAttackMap(int startSquare, int dirStart, int dirEnd) {
         const int dirOff = directionOffset[dirIndex];
         for(int n = 0; n < numSquareToEdge[startSquare][dirIndex]; n++) {
             const uint64_t targetSquare = startSquare + dirOff* (n+1);
-            const int pieceAtTarget = board->getPieceAtSquare(targetSquare);
+            const int pieceAtTarget = board->getPieceAtSquare(static_cast<int>(targetSquare));
             slideAttackMap |= static_cast<uint64_t>(1) << targetSquare;
             if(targetSquare != board->getKingPos(position.friendlyColor) &&
                 pieceAtTarget != 0) {
@@ -512,13 +509,13 @@ void MoveGenerator::generatePawnAttack(const int activePos, const color activeCo
 
 void MoveGenerator::generatePawnMoves() {
     const std::vector<piece_data> pawns = board->getPiceColorList(pawn, position.friendlyColor);
-    int pawnForwards = position.friendlyColor == white? -8:8;
-    int startRank = position.friendlyColor == white? 1:6;
-    int promoteFlagRank = position.friendlyColor == white? 6:1;
+    const int pawnForwards = position.friendlyColor == white? -8:8;
+    const int startRank = position.friendlyColor == white? 1:6;
+    const int promoteFlagRank = position.friendlyColor == white? 6:1;
 
     for(piece_data pawn : pawns) {
-        bool promoteFlag = promoteFlagRank == pawn.index/8;
-        int targetSquare = pawn.index + pawnForwards;
+        const bool promoteFlag = promoteFlagRank == pawn.index/8;
+        const int targetSquare = pawn.index + pawnForwards;
         if(board->getPieceAtSquare(targetSquare) == none) {
             if(checkValueAtPos(position.pinRayMask,pawn.index) ||
                 IsMoveAlongRay(pawnForwards, pawn.index, position.activeKingIndex)) {
@@ -531,7 +528,7 @@ void MoveGenerator::generatePawnMoves() {
                     }
                 }
                 if(pawn.index/8 == startRank) {
-                    int targetTwo = targetSquare + pawnForwards;
+                    const int targetTwo = targetSquare + pawnForwards;
                     if(board->getPieceAtSquare(targetTwo) == none) {
                         if(!position.inCheck || checkValueAtPos(position.checkRayMask, targetTwo)) {
                             legalMoves.push_back({pawn.index, targetTwo, twoSquarePawnMove});
@@ -545,7 +542,7 @@ void MoveGenerator::generatePawnMoves() {
             int dirOffset;
         };
         std::vector<enPassDetails> enPassTargets;
-        color activeColor = position.friendlyColor;
+        const color activeColor = position.friendlyColor;
         const int dirMultiplier = activeColor == white ? 1:-1;
         //need to make sure that they are not at edges of board
         if(pieceOnEdge[pawn.index] != (leftEdge | upperLeftCorner | lowerLeftCorner)) {
@@ -607,8 +604,8 @@ void MoveGenerator::generateKingMoves() {
         }
     }
     //Now check to see if they are legal
-    for(int target : targetSquares) {
-        bool capture = board->isColor(board->getPieceAtSquare(target), position.opponentcolor);
+    for(const int target : targetSquares) {
+        const bool capture = board->isColor(board->getPieceAtSquare(target), position.opponentcolor);
         if(!capture) {
             if(checkValueAtPos(position.checkRayMask, target)) {
                 continue;
@@ -621,12 +618,12 @@ void MoveGenerator::generateKingMoves() {
     }
     //Now Castleing
     if(!position.inCheck) {
-        color fColor = position.friendlyColor;
-        bool kingside = fColor == white ? position.castleAbility[0] : position.castleAbility[2];
-        bool queenside = fColor == white ? position.castleAbility[1] : position.castleAbility[3];
+        const color fColor = position.friendlyColor;
+        const bool kingside = fColor == white ? position.castleAbility[0] : position.castleAbility[2];
+        const bool queenside = fColor == white ? position.castleAbility[1] : position.castleAbility[3];
         if(kingside) {
-            int targetIndex = position.activeKingIndex + 2; //right two
-            int passThroughIndex = position.activeKingIndex + 1; //need to check both
+            const int targetIndex = position.activeKingIndex + 2; //right two
+            const int passThroughIndex = position.activeKingIndex + 1; //need to check both
             if(!checkValueAtPos(attackMap, targetIndex) &&
                 !checkValueAtPos(attackMap, passThroughIndex)) {
                 if(board->getPieceAtSquare(targetIndex) == 0 &&
@@ -637,8 +634,8 @@ void MoveGenerator::generateKingMoves() {
             }
         }
         if(queenside) {
-            int targetIndex = position.activeKingIndex - 2; //left two
-            int passThroughIndex = position.activeKingIndex - 1; //need to check both
+            const int targetIndex = position.activeKingIndex - 2; //left two
+            const int passThroughIndex = position.activeKingIndex - 1; //need to check both
             if(!checkValueAtPos(attackMap, targetIndex) &&
                 !checkValueAtPos(attackMap, passThroughIndex)) {
                 if(board->getPieceAtSquare(targetIndex) == 0 &&

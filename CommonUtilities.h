@@ -16,13 +16,13 @@ struct piece_data {
 //90 = black Kingside
 //100 = black Queenside
 enum moveFlag {
-    normal,
-    whiteKingSide,
-    whiteQueenSide,
-    blackKingSide,
-    blackQueenSide,
-    enPassantCapture,
-    twoSquarePawnMove,
+    normal = 0,
+    whiteKingSide = 1,
+    whiteQueenSide = 2,
+    blackKingSide = 3,
+    blackQueenSide = 4,
+    enPassantCapture = 5,
+    twoSquarePawnMove = 6,
     promoteToQueen = 7,
     promoteToRook = 8,
     promoteToBishop = 9,
@@ -35,20 +35,35 @@ struct move {
     moveFlag flag = normal;
 };
 
+enum color {
+    white = 0b01000,
+    black = 0b10000,
+    noMove = -1
+};
+
 struct gameState {
-    bool colorMove;
+    color colorMove;
     //0 none, 0b0001 white kingside,0010 white queenside, 0100 black Kingside,1000 black queenside
     int castleAbility;
     //-1 = no en Passant
     int enPassantIndex;
     int fiftyPlyCount;
     int totalPly;
-    int mostRecentMove[2];
-};
+    move mostRecentMove;
 
-enum color {
-    white = 0b01000,
-    black = 0b10000
+    void clear() {
+        colorMove = noMove;
+        enPassantIndex = -1;
+    }
+
+    void switchColor() {
+        if(colorMove == white) {
+            colorMove = black;
+        }
+        else if(colorMove == black){
+            colorMove = white;
+        }
+    }
 };
 
 enum piece {

@@ -7,6 +7,7 @@
 #include <stack>
 #include <unordered_map>
 #include <vector>
+#include <cstdio>
 
 #include "../Pieces.h"
 #include "../../CommonUtilities.h"
@@ -25,6 +26,7 @@ public:
     bool isColor(int piece, color color) const;
     color getPieceColor(int piece_) const;
     piece getPieceType(int piece_) const;
+    void makeMove(move);
 private:
     gameState currentState;
     bool colorToMove;

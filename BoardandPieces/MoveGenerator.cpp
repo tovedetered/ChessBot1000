@@ -159,27 +159,27 @@ bool MoveGenerator::IsMoveAlongRay(int dir, int start, const int target) const {
     //up or down
     if(dir == 8 || dir == -8) {
         int numToEdge = numSquareToEdge[start][2];
-        startOfRay = start + numToEdge(-8);
+        startOfRay = start + numToEdge * (-8);
         numOfSquareInRay = numSquareToEdge[startOfRay][8];
     }
     else if(dir == -1 || dir == 1) {
         //N,E,S,W,NE,SE,SW,NW
         int numToEdge = numSquareToEdge[start][3];
-        startOfRay = start + numToEdge(-1);
+        startOfRay = start + numToEdge * (-1);
         numOfSquareInRay = numSquareToEdge[startOfRay][1];
     }
     else if (dir == -7 || dir == 7) {
         int numToEdge = numSquareToEdge[start][6];
-        startOfRay = start + numToEdge(-7);
+        startOfRay = start + numToEdge * (-7);
         numOfSquareInRay = numSquareToEdge[startOfRay][7];
     }
     else {
         int numToEdge = numSquareToEdge[start][7];
-        startOfRay = start + numToEdge(-9);
+        startOfRay = start + numToEdge * (-9);
         numOfSquareInRay = numSquareToEdge[startOfRay][9];
     }
     for(int i = 0; i < numOfSquareInRay; i++) {
-        if(const int targetSquare = startOfRay + dir(i); targetSquare == target) {
+        if(const int targetSquare = startOfRay +  dir * (i); targetSquare == target) {
             return true;
         }
     }

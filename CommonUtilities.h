@@ -23,10 +23,10 @@ enum moveFlag {
     blackQueenSide,
     enPassantCapture,
     twoSquarePawnMove,
-    promoteToQueen,
-    promoteToRook,
-    promoteToBishop,
-    promoteToKnight,
+    promoteToQueen = 7,
+    promoteToRook = 8,
+    promoteToBishop = 9,
+    promoteToKnight = 10,
 };
 
 struct move {

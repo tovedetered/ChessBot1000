@@ -83,6 +83,7 @@ private:
     void generateSlideMove(int activePos, int startDirIndex, int endDirIndex);
     void updateAttackMap(int startSquare, int dirStart, int dirEnd);
 
+    void generateKnightMoves();
     std::vector<move> generateKnightMove(int activePos) const;
     void generateKnightAttack(int activePos);
 

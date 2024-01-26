@@ -5,6 +5,7 @@
 
 
 //Heaily Inspired by / C++ port of Sebastian Lauge's V1 ChessBot
+//https://github.com/SebLague/Chess-Coding-Adventure/tree/Chess-V1-Unity
 /*MIT License
 
 Copyright (c) 2021 Sebastian Lague
@@ -53,7 +54,8 @@ std::vector<move> MoveGenerator::generateMoves() {
         return legalMoves;
     }
     generateSlidingMoves();
-
+    generatePawnMoves();
+    generateKnightMoves();
     return legalMoves;
 }
 
@@ -409,6 +411,15 @@ void MoveGenerator::updateAttackMap(int startSquare, int dirStart, int dirEnd) {
     }
 }
 
+void MoveGenerator::generateKnightMoves() {
+    const std::vector<piece_data> knightList = board->getPiceColorList(knight, position.friendlyColor);
+    for(const auto [piece, index] : knightList) {
+        if(std::vector<move> knightMove = generateKnightMove(index); !knightMove.empty()) {
+            legalMoves.insert(legalMoves.end(), knightMove.begin(), knightMove.end());
+        }
+    }
+}
+
 std::vector<move> MoveGenerator::generateKnightMove(const int activePos) const {
     std::vector<move> moves;
     std::vector<int> targetMoves;
@@ -568,6 +579,13 @@ void MoveGenerator::generatePawnMoves() {
     }
 
 
+}
+
+void MoveGenerator::generatePromoionMoves(const int targetSquare, const int startSquare) {
+    for(int i = 7; i < 11; i++) {
+        const auto promFlag = static_cast<moveFlag>(i);
+        legalMoves.push_back({startSquare, targetSquare, promFlag});
+    }
 }
 
 void MoveGenerator::generateKingAttack(const int activePos) {

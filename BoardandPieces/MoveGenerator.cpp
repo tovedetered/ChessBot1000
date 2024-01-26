@@ -107,6 +107,13 @@ void MoveGenerator::init() {
     position.pinsExistInPos = false;
     position.checkRayMask = 0;
     position.pinRayMask = 0;
+    kingAttackMap = 0;
+    pawnsPinned = 0;
+    pawnAttackMap = 0;
+    slideAttackMap = 0;
+    attackMap = 0;
+    knightAttackMap = 0;
+    kingAttackMap = 0;
 }
 
 void MoveGenerator::precomputeMoveData() {
@@ -196,33 +203,79 @@ void MoveGenerator::calcAttackMap() {
     //for every direction check to see if a piece that could be attacking is
     for(int i = startDir; i < endDir; i++) {
         bool diag = i > 3;
-
         const int numSquare = numSquareToEdge[position.activeKingIndex][i];
         bool friendInDir = false;
+        bool enPassFlag = false;
+        bool freindPawnInDir = false;
+        bool alreadyPawnInDir = false;
         unsigned long long int rayMask = 0;
         //check sliding pieces
         for(int j = 0; j < numSquare; j++) {
             const int targetSquare = position.activeKingIndex + directionOffset[i] * (j+1);
             const int targetPiece = board->getPieceAtSquare(targetSquare);
             rayMask |= 1ul << targetSquare;
+            if(board->getPieceType(targetPiece) == pawn &&
+                board->getPieceColor(targetPiece) == position.opponentcolor) {
+                //see if enpassant square is adjacent to it
+                if(const int backwardsDir = board->getPieceColor(targetPiece) == white? 8:-8;
+                    targetSquare + backwardsDir == position.enPassantIndex) {
+                    //if it is then check to see if it can be captured by a pawn, and if so raise a flag
+                    //It cannot be the freindly color being en-passant'ed in this case
+                    //we already know that it will not check the king by moving, only matters if the piece gets taken
+                    //and it IS blocking the pin
+                    //we just cannot take it
+                    //Here we need to raise a look and continue
+                    if(!alreadyPawnInDir) {
+                        alreadyPawnInDir = true;
+                        if(board->getPieceType(targetPiece + 1) == pawn &&
+                            board->getPieceColor(targetPiece+1) == position.friendlyColor) {
+                            enPassFlag = true;
+                            }
+                        if(board->getPieceType(targetPiece - 1) == pawn &&
+                            board->getPieceColor(targetPiece - 1) == position.friendlyColor) {
+                            enPassFlag = true;
+                            }
+                        continue;
+                    }
+                    break;
+                }
+            }
             if(targetPiece != none) {
                 //see if freinds are blocking/are pinned
                 if(board->isColor(targetPiece, position.friendlyColor)) {
                     if(!friendInDir) {
+                        if(board->getPieceType(targetPiece) == pawn && enPassFlag) freindPawnInDir = true;
                         friendInDir = true;
                     }
                     else {
+                        enPassFlag = false;
+                        freindPawnInDir = false;
                         break;
                     }
                 }
+                //opponent piece there
                 else {
                     if(ableToMoveInDir(targetPiece, diag)) {
-                        if(friendInDir) {
+
+                        if((friendInDir && !freindPawnInDir) ||
+                            (friendInDir && (freindPawnInDir && (i != 1 && i != 3)))) {
                             position.pinsExistInPos = true;
                             //OR ing the pin mask to update it with current ray
                             position.pinRayMask |= rayMask;
                         }
+                        else if(friendInDir && freindPawnInDir && (i == 1 || i == 3)) {
+                            position.enPassImposible = true;
+                            break;
+                        }
                         else {
+                            //here enPass is impossible,
+                            if(enPassFlag) {
+                                //We are not pinned, but we cant take en pass
+                                if(freindPawnInDir && (i == 1 || i == 3)) {
+                                    position.enPassImposible = true;
+                                    break;
+                                }
+                            }
                             position.checkRayMask |= rayMask;
                             position.inDoubleCheck = position.inCheck;
                             position.inCheck = true;
@@ -230,7 +283,8 @@ void MoveGenerator::calcAttackMap() {
                         break;
                     }
                     //pice blocking any pins or attacks
-                    break;
+                    //but if it is a pawn we need to continue to look to stop any funny buisness with
+                    //en-passant
                 }
             }
         }
@@ -458,7 +512,7 @@ void MoveGenerator::generatePawnMoves() {
             if(checkValueAtPos(position.pinRayMask,pawn.index) ||
                 IsMoveAlongRay(pawnForwards, pawn.index, position.activeKingIndex)) {
                 if(!position.inCheck || checkValueAtPos(position.checkRayMask, targetSquare)) {
-                    if(promoteFlagRank) {
+                    if(promoteFlag) {
                         generatePromoionMoves(targetSquare, pawn.index);
                     }
                     else {
@@ -506,6 +560,9 @@ void MoveGenerator::generatePawnMoves() {
                 else {
                     legalMoves.push_back({pawn.index, target});
                 }
+            }
+            if(target == position.enPassantIndex && !position.enPassImposible) {
+                legalMoves.push_back({pawn.index, target, enPassantCapture});
             }
         }
     }

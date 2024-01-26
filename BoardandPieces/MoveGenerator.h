@@ -24,6 +24,7 @@ struct positionDetails {
     //0 wks, 1 wqs, 2 bks, 3 bqs
     bool castleAbility[4];
     int enPassantIndex;
+    bool enPassImposible;
 
     void clear() {
         inCheck = false;
@@ -38,6 +39,7 @@ struct positionDetails {
         opponentKingIndex = 0;
         enPassantIndex = -1;
         std::fill(std::begin(castleAbility), std::end(castleAbility), false);
+        enPassImposible = false;
     }
 };
 
@@ -66,6 +68,7 @@ private:
     uint64_t knightAttackMap;
     uint64_t pawnAttackMap{};
     uint64_t kingAttackMap;
+    uint64_t pawnsPinned;
     std::unordered_map<int, edgeData> pieceOnEdge;
     std::unordered_map<int, edgeData> pieceOnTopBot;
     void initPieceOnEdge();

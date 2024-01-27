@@ -1,20 +1,15 @@
 #include <iostream>
 #include <raylib.h>
-#include "GameManager.h"
+#include "BoardandPieces/Board/Board.h"
 
 int main() {
-    /*
-    GameManager game;
-    game.startup();
-    game.mainLoop();
-    game.shutDown();
-    return 0;
-    */
-    unsigned long long int rayMask = 0;
+    Board* board = new Board;
+    MoveGenerator moveGen(board);
+    board->setMoveGen(&moveGen);
+    std::string fenString = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+    board->loadPosFromFen(fenString);
+    uint64_t nodes = board->perft(5);
 
-    for (int i = 0; i < 4; i++) {
-        int squareIndex = 10 + 8 * (i + 1);
-        rayMask |= 1ul << squareIndex;
-        std::cout << rayMask << std::endl;
-    }
+    std::cout << nodes << std::endl;
+    return 0;
 }

@@ -56,8 +56,9 @@ enum edgeData {
 };
 class MoveGenerator {
 public:
-    MoveGenerator(Board* board);
+    explicit MoveGenerator(class Board* board);
     std::vector<move> generateMoves();
+
 private:
     pieces pieceTable;
     std::vector<piece_data> activePieces;
@@ -74,8 +75,9 @@ private:
     void initPieceOnEdge();
 
     void init();
+    void updatePostiton();
 
-    Board* board;
+    class Board* board;
 
     void calcAttackMap();
     void calcSlideAttackMap();

@@ -118,6 +118,13 @@ void MoveGenerator::init() {
     kingAttackMap = 0;
 }
 
+void MoveGenerator::updatePostiton() {
+    //need to update the game board somehow
+    gameState game = board->getCurrentGameState();
+    position.friendlyColor = game.colorMove;
+
+}
+
 void MoveGenerator::precomputeMoveData() {
     numSquareToEdge.reserve(64);
     for(int file = 0; file < 8; file ++) {

@@ -10,13 +10,16 @@
 #include <cstdio>
 #include <string>
 
+#include "../MoveGenerator.h"
 #include "../Pieces.h"
 #include "../../CommonUtilities.h"
+#include "../Pieces/piece_list.h"
 
 
 class Board {
 public:
     Board();
+    ~Board();
     gameState getCurrentGameState() const;
     bool getColorToMove();
     int getKingPos(color color) const;
@@ -32,8 +35,11 @@ public:
 
     void makeMove(move);
     void undoMove(move toUndo);
+    uint64_t perft(int depth);
+
+    void setMoveGen(class MoveGenerator* inGen);
 private:
-    using pieceList = std::unordered_map<color, std::vector<piece_data>*>;
+
     gameState currentState;
     bool colorToMove{};
     std::stack<gameState> gameHistory;
@@ -43,15 +49,17 @@ private:
 
     int board[64]{};
 
+    MoveGenerator* moveGen{};
 
-    pieceList rooks;
-    pieceList queens;
-    pieceList pawns;
-    pieceList bishops;
-    pieceList knights;
-    pieceList kings;
+    piece_list rooks;
+    piece_list queens;
+    piece_list pawns;
+    piece_list bishops;
+    piece_list knights;
+    piece_list kings;
+    void initPieceLists();
 
-    std::unordered_map<piece , pieceList*> pieceListMap;
+    std::unordered_map<piece , piece_list*> pieceListMap;
     void initPiceListMap();
 
     void addPiceToMap(int pieceValue, int index);

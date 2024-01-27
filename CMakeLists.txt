@@ -34,6 +34,8 @@ add_executable(ChessBot1000 main.cpp
         BoardandPieces/Board/Board.cpp
         BoardandPieces/Board/Board.h
         CommonUtilities.h
+        BoardandPieces/Pieces/piece_list.cpp
+        BoardandPieces/Pieces/piece_list.h
 )
 
 target_link_libraries(${PROJECT_NAME} raylib)

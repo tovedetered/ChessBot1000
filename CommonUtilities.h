@@ -40,11 +40,24 @@ enum color {
     black = 0b10000,
     noMove = -1
 };
+struct castleStats {
+    int rookStartIndex;
+    int rookEndIndex;
+    int rookType;
+
+    void clear() {
+        rookStartIndex = -1;
+        rookEndIndex = -1;
+        rookType = -1;
+    }
+};
+
 
 struct gameState {
     color colorMove;
     //0 none, 0b0001 white kingside,0010 white queenside, 0100 black Kingside,1000 black queenside
     int castleAbility;
+    castleStats castlePlayed;
     //-1 = no en Passant
     int enPassantIndex;
     int fiftyPlyCount;
@@ -52,6 +65,7 @@ struct gameState {
     int halfMoves;
     move mostRecentMove;
     int pieceCaptureInMove;
+    int mostRecentPromoPiece;
 
     void clear() {
         colorMove = noMove;

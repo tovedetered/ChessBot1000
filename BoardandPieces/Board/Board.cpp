@@ -14,6 +14,15 @@ Board::Board() {
     initFenToID();
 }
 
+Board::~Board() {
+    delete pieceListMap[pawn];
+    delete pieceListMap[knight];
+    delete pieceListMap[bishop];
+    delete pieceListMap[rook];
+    delete pieceListMap[queen];
+    delete pieceListMap[king];
+}
+
 gameState Board::getCurrentGameState() const {return currentState;}
 
 int Board::getKingPos(const color color) const {return kingsPos[color];}
@@ -46,6 +55,7 @@ void Board::loadPosFromFen(const std::string& fenString) {
         }
         if(std::isalpha(token)) {
             board[access(file, rank)] = fenToID[token];
+            addPiceToMap(board[access(file, rank)], access(file,rank));
             if(token == 'k') {
                 kingsPos[0] = {access(file, rank)};
             }
@@ -142,8 +152,8 @@ void Board::loadPosFromFen(const std::string& fenString) {
 }
 
 std::vector<piece_data> Board::getPiceColorList(const piece piece_, const color color_) {
-    std::unordered_map<color, std::vector<piece_data>*> allPiecesOfType = *pieceListMap[piece_];
-    return *allPiecesOfType[color_];
+    piece_list *allPiecesOfType = pieceListMap[piece_];
+    return *allPiecesOfType->list.at(color_);
 }
 
 bool Board::isColor(const int piece, const color color) const {
@@ -170,6 +180,9 @@ void Board::makeMove(const move currentMove) {
     board[currentMove.startIndex] = 0;
     int miscSquare = -1;
     currentState.pieceCaptureInMove = -1;
+    currentState.mostRecentPromoPiece = -1;
+    currentState.enPassantIndex = -1;
+    currentState.castlePlayed.clear();
     //Catleing
     if(currentMove.flag != normal && static_cast<int>(currentMove.flag) < 5) {
         int movementMultiplier = 0;
@@ -195,14 +208,19 @@ void Board::makeMove(const move currentMove) {
             exit(-950);
         }
         const int targetRook = board[miscSquare];
+        currentState.castlePlayed.rookStartIndex = miscSquare;
+
         //remove Rook from the board
         board[miscSquare] = 0;
 
         //put the rook on its new square
         //king handled below
-        board[miscSquare - 2*movementMultiplier] = targetRook;
-        movePieceInMap(miscSquare, miscSquare - 2*movementMultiplier, targetRook);
+        const int newRookSquare = miscSquare - 2*movementMultiplier;
 
+        board[newRookSquare] = targetRook;
+        movePieceInMap(miscSquare, newRookSquare, targetRook);
+
+        currentState.castlePlayed.rookEndIndex = newRookSquare;
     }
     else if(currentMove.flag == twoSquarePawnMove) {
         //need to set en pass index to one behind
@@ -248,6 +266,7 @@ void Board::makeMove(const move currentMove) {
         pieceData.piece = movingPiece;
         currentState.enPassantIndex = -1;
         addPiceToMap(movingPiece, currentMove.endIndex);
+        currentState.mostRecentPromoPiece = movingPiece;
     }
     else {
         //if a pawn did not move two spaces up we need to update it
@@ -271,15 +290,31 @@ void Board::undoMove(move toUndo) {
     currentState = gameHistory.top();
     gameHistory.pop();
 
-    int startIndex = toUndo.startIndex;
-    int endIndex = toUndo.endIndex;
-    int undoingPiece = board[endIndex];
+    const int startIndex = toUndo.startIndex;
+    const int endIndex = toUndo.endIndex;
+    const int undoingPiece = board[endIndex];
 
     board[endIndex] = 0;
+    //castleing
+    if(static_cast<int>(toUndo.flag) < 5 && static_cast<int>(toUndo.flag) > 1) {
+        //just need to move the rook
+        board[currentState.castlePlayed.rookEndIndex] = 0;
+        board[currentState.castlePlayed.rookStartIndex] = currentState.castlePlayed.rookType;
+        movePieceInMap(currentState.castlePlayed.rookEndIndex, currentState.castlePlayed.rookStartIndex,
+            currentState.castlePlayed.rookType);
+    }
+    //If there was a promotion
+    if(static_cast<int>(toUndo.flag) <= 6) {
+        board[startIndex] = undoingPiece;
+        //Has to be wrong order
+        movePieceInMap(endIndex, startIndex, undoingPiece);
+    }
+    else { //promotion happened
+        board[startIndex] = currentState.mostRecentPromoPiece;
+        addPiceToMap(static_cast<int>(currentState.colorMove) | static_cast<int>(pawn), startIndex);
+        removePiceFromMap(undoingPiece, endIndex);
+    }
 
-    board[startIndex] = undoingPiece;
-    //Has to be wrong order
-    movePieceInMap(endIndex, startIndex, undoingPiece);
     //if there was a capture
     if(currentState.pieceCaptureInMove != -1) {
         if(toUndo.flag != enPassantCapture) {
@@ -295,25 +330,42 @@ void Board::undoMove(move toUndo) {
     }
 }
 
+uint64_t Board::perft(int depth) {
+    std::vector<move> movesAtDepth = moveGen->generateMoves();
+    uint64_t nodes = 0;
+
+    unsigned long numMoves = movesAtDepth.size();
+    if(depth == 1) {
+        return static_cast<uint64_t>(numMoves);
+    }
+
+    for(int i = 0; i < numMoves; i++) {
+        makeMove(movesAtDepth[i]);
+        nodes += perft(depth - 1);
+        undoMove(movesAtDepth[i]);
+    }
+    return nodes;
+}
+
+void Board::setMoveGen(MoveGenerator* inGen) {
+    moveGen = inGen;
+}
+
 void Board::initPiceListMap() {
-    std::pair rookList = {rook, &rooks};
-    pieceListMap.emplace(rookList);
-    std::pair queenList = {queen, &queens};
-    pieceListMap.emplace(queenList);
-    std::pair knightList = {knight, &knights};
-    pieceListMap.emplace(knightList);
-    std::pair kingList = {king, &kings};
-    pieceListMap.emplace(kingList);
-    std::pair bishopList = {bishop, &bishops};
-    pieceListMap.emplace(bishopList);
-    std::pair pawnList = {pawn, &pawns};
-    pieceListMap.emplace(pawnList);
+    pieceListMap.emplace(rook, &rooks);
+    pieceListMap.emplace(queen, &queens);
+    pieceListMap.emplace(knight, &knights);
+    pieceListMap.emplace(king, &kings);
+    pieceListMap.emplace(bishop, &bishops);
+    pieceListMap.emplace(pawn, &pawns);
 }
 
 void Board::addPiceToMap(const int pieceValue, const int index) {
-    const pieceList* listOfPieces = pieceListMap[getPieceType(pieceValue)];
-    pieceList other = *listOfPieces;
-    std::vector<piece_data>* piecesOfColorAndPiece = other[getPieceColor(pieceValue)];
+    piece pieceType = getPieceType(pieceValue);
+
+    const piece_list* listOfPieces = pieceListMap[pieceType];
+
+    std::vector<piece_data>* piecesOfColorAndPiece = listOfPieces->list.at(getPieceColor(pieceValue));
     piecesOfColorAndPiece->push_back({pieceValue, index});
 }
 
@@ -322,9 +374,8 @@ void Board::removePiceFromMap(const int pieceValue, const int index) {
         return;
     }
 
-    const pieceList* listOfPieces = pieceListMap[getPieceType(pieceValue)];
-    pieceList other = *listOfPieces;
-    std::vector<piece_data>* piecesOfColorAndPiece = other[getPieceColor(pieceValue)];
+    const piece_list* listOfPieces = pieceListMap[getPieceType(pieceValue)];
+    std::vector<piece_data>* piecesOfColorAndPiece = listOfPieces->list.at(getPieceColor(pieceValue));
 
     for(int i = 0; i < piecesOfColorAndPiece->size(); i++) {
         const piece_data currentPice = piecesOfColorAndPiece->at(i);
@@ -341,11 +392,10 @@ void Board::movePieceInMap(int startindex, int endIndex, int pieceValue) {
     if(pieceValue == 0) {
         return;
     }
-    const pieceList* listOfPieces = pieceListMap[getPieceType(pieceValue)];
-    pieceList other = *listOfPieces;
+    const piece_list* listOfPieces = pieceListMap[getPieceType(pieceValue)];
     // ReSharper disable once CppLocalVariableMayBeConst
     //It cannot be
-    std::vector<piece_data>* piecesOfColorAndPiece = other[getPieceColor(pieceValue)];
+    std::vector<piece_data>* piecesOfColorAndPiece = listOfPieces->list.at(getPieceColor(pieceValue));
 
     for(auto & i : *piecesOfColorAndPiece) {
         const piece_data currentPice = i;

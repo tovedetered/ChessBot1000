@@ -49,7 +49,9 @@ struct gameState {
     int enPassantIndex;
     int fiftyPlyCount;
     int totalPly;
+    int halfMoves;
     move mostRecentMove;
+    int pieceCaptureInMove;
 
     void clear() {
         colorMove = noMove;
@@ -76,6 +78,18 @@ enum piece {
     king = 0b001,
 };
 
+struct piecesDataThing {
+    int none = 0b000;
+    int rook = 0b101;
+    int queen = 0b110;
+    int pawn = 0b010;
+    int bishop = 0b100;
+    int knight = 0b011;
+    int king = 0b001;
+    int white = 0b01000;
+    int black = 0b10000;
+};
+
 inline bool checkValueAtPos(const uint64_t num, const uint64_t n) {
     return static_cast<bool>((num >> n) & static_cast<uint64_t>(1));
 }
@@ -87,4 +101,6 @@ inline void flipBitAtPos(uint64_t* num, const uint64_t n) {
 inline void bitToOneAtPos(uint64_t* num, const uint64_t n) {
     *num |= static_cast<uint64_t>(1) << n;
 }
+
+inline int access(const int file, const int rank) {return file + 8 * rank;}
 #endif //COMMONUTILITIES_H

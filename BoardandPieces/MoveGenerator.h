@@ -10,7 +10,7 @@
 #include "../CommonUtilities.h"
 
 struct positionDetails {
-    bool inCheck;
+    bool inCheck = false;
     bool inDoubleCheck;
     bool pinsExistInPos;
     uint64_t checkRayMask;
@@ -73,7 +73,7 @@ private:
     std::unordered_map<int, edgeData> pieceOnEdge;
     std::unordered_map<int, edgeData> pieceOnTopBot;
     void initPieceOnEdge();
-
+    gameState game;
     void init();
     void updatePostiton();
 

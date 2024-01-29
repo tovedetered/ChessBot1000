@@ -32,6 +32,8 @@ SOFTWARE.*/
 
 #include <iostream>
 
+#include "Renderers/GraphicalBoard.h"
+
 MoveGenerator::MoveGenerator(Board* board) {
     this->board = board;
     position.clear();
@@ -46,6 +48,7 @@ MoveGenerator::MoveGenerator(Board* board) {
 
 std::vector<move> MoveGenerator::generateMoves() {
     init();
+    updatePostiton();
     //calculating the attack map to find checks
     calcAttackMap();
     generateKingMoves();
@@ -116,17 +119,24 @@ void MoveGenerator::init() {
     attackMap = 0;
     knightAttackMap = 0;
     kingAttackMap = 0;
+    game = board->getCurrentGameState();
 }
 
 void MoveGenerator::updatePostiton() {
     //need to update the game board somehow
-    gameState game = board->getCurrentGameState();
     position.friendlyColor = game.colorMove;
-
+    position.opponentcolor = position.friendlyColor == white? black:white;
+    position.enPassantIndex = game.enPassantIndex;
+    position.activeKingIndex = board->getKingPos(position.friendlyColor);
+    position.opponentKingIndex = board->getKingPos(position.opponentcolor);
+    position.castleAbility[0] = checkValueAtPos(game.castleAbility, 0);
+    position.castleAbility[1] = checkValueAtPos(game.castleAbility, 1);
+    position.castleAbility[2] = checkValueAtPos(game.castleAbility, 2);
+    position.castleAbility[3] = checkValueAtPos(game.castleAbility, 3);
 }
 
 void MoveGenerator::precomputeMoveData() {
-    numSquareToEdge.reserve(64);
+    numSquareToEdge.resize(64);
     for(int file = 0; file < 8; file ++) {
         for(int rank = 0; rank < 8; rank++) {
             int numNorth = rank;
@@ -135,16 +145,19 @@ void MoveGenerator::precomputeMoveData() {
             int numWest = file;
 
             const int squareIndex = access(file, rank);
-            const std::vector<int> nums = {
+            if(squareIndex == 60) {
+                std::cout << rank << " " << file << " " << squareIndex;
+            }
+            const std::vector nums = {
                 numNorth,
-                numSouth,
                 numEast,
+                numSouth,
                 numWest,
                 std::min(numEast, numNorth),
                 std::min(numEast, numSouth),
                 std::min(numWest, numSouth),
                 std::min(numWest, numNorth),};
-            numSquareToEdge[squareIndex] = nums;
+            numSquareToEdge.at(squareIndex) = nums;
         }
     }
 }
@@ -165,25 +178,25 @@ bool MoveGenerator::IsMoveAlongRay(int dir, int start, const int target) const {
     int numOfSquareInRay;
     //up or down
     if(dir == 8 || dir == -8) {
-        int numToEdge = numSquareToEdge[start][2];
-        startOfRay = start + numToEdge * (-8);
-        numOfSquareInRay = numSquareToEdge[startOfRay][8];
+        const int numToEdge = numSquareToEdge[start][2];
+        startOfRay = start + numToEdge * directionOffset[2];
+        numOfSquareInRay = numSquareToEdge[startOfRay][0];
     }
     else if(dir == -1 || dir == 1) {
         //N,E,S,W,NE,SE,SW,NW
         int numToEdge = numSquareToEdge[start][3];
-        startOfRay = start + numToEdge * (-1);
+        startOfRay = start + numToEdge * directionOffset[3];
         numOfSquareInRay = numSquareToEdge[startOfRay][1];
     }
     else if (dir == -7 || dir == 7) {
-        int numToEdge = numSquareToEdge[start][6];
+        int numToEdge = numSquareToEdge[start][4];
         startOfRay = start + numToEdge * (-7);
-        numOfSquareInRay = numSquareToEdge[startOfRay][7];
+        numOfSquareInRay = numSquareToEdge[startOfRay][6];
     }
     else {
-        int numToEdge = numSquareToEdge[start][7];
-        startOfRay = start + numToEdge * (-9);
-        numOfSquareInRay = numSquareToEdge[startOfRay][9];
+        int numToEdge = numSquareToEdge[start][5];
+        startOfRay = start + numToEdge * (9);
+        numOfSquareInRay = numSquareToEdge[startOfRay][7];
     }
     for(int i = 0; i < numOfSquareInRay; i++) {
         if(const int targetSquare = startOfRay +  dir * (i); targetSquare == target) {
@@ -212,6 +225,9 @@ void MoveGenerator::calcAttackMap() {
     for(int i = startDir; i < endDir; i++) {
         const bool diag = i > 3;
         const int numSquare = numSquareToEdge[position.activeKingIndex][i];
+        if(numSquare == 0) {
+            continue;
+        }
         bool friendInDir = false;
         bool enPassFlag = false;
         bool freindPawnInDir = false;
@@ -255,7 +271,7 @@ void MoveGenerator::calcAttackMap() {
                         if(board->getPieceType(targetPiece) == pawn && enPassFlag) freindPawnInDir = true;
                         friendInDir = true;
                     }
-                    else {;
+                    else {
                         break;
                     }
                 }
@@ -291,6 +307,7 @@ void MoveGenerator::calcAttackMap() {
                     //pice blocking any pins or attacks
                     //but if it is a pawn we need to continue to look to stop any funny buisness with
                     //en-passant
+                    break;
                 }
             }
         }
@@ -430,29 +447,29 @@ std::vector<move> MoveGenerator::generateKnightMove(const int activePos) const {
     const color knightColor = board->getPieceColor(board->getPieceAtSquare(activePos));
     //up 2 over 1
     //2N 1E
-    if(activePos%8 <7 && activePos/8 < 6) //check to see if at edge of board so we don't warp / segfault
+    if(activePos%8 <7 && activePos/8 > 1) //check to see if at edge of board so we don't warp / segfault
         targetMoves.push_back(activePos + 2 * directionOffset[0] + directionOffset[1]);
     //2E 1N
-    if(activePos%8 < 6 && activePos/8 < 7)
+    if(activePos%8 < 6 && activePos/8 > 0)
         targetMoves.push_back(activePos + 2*directionOffset[1] + directionOffset[0]);
     //2E 1S
-    if(activePos%8 < 6 && activePos/8 > 0)
+    if(activePos%8 < 6 && activePos/8 < 7)
         targetMoves.push_back(activePos + 2*directionOffset[1] + directionOffset[2]);
     //2S 1E
-    if(activePos%8 < 7 && activePos/8 > 1)
+    if(activePos%8 < 7 && activePos/8 < 6)
         targetMoves.push_back(activePos + 2*directionOffset[2] + directionOffset[1]);
     // 2S 1W
-    if(activePos%8 > 0 && activePos/8 > 1)
-        targetMoves.push_back(activePos + 2 * directionOffset[2] - directionOffset[1]);
-    // 2W 1S
-    if(activePos%8 > 1 && activePos/8 > 0)
-        targetMoves.push_back(activePos + 2 * directionOffset[3] - directionOffset[2]);
-    // 2W 1N
-    if(activePos%8 > 1 && activePos/8 < 7)
-        targetMoves.push_back(activePos + 2 * directionOffset[3] + directionOffset[1]);
-    // 2N 1W
     if(activePos%8 > 0 && activePos/8 < 6)
-        targetMoves.push_back(activePos + 2 * directionOffset[0] - directionOffset[1]);
+        targetMoves.push_back(activePos + 2 * directionOffset[2] + directionOffset[3]);
+    // 2W 1S
+    if(activePos%8 > 1 && activePos/8 < 7)
+        targetMoves.push_back(activePos + 2 * directionOffset[3] + directionOffset[2]);
+    // 2W 1N
+    if(activePos%8 > 1 && activePos/8 > 0)
+        targetMoves.push_back(activePos + 2 * directionOffset[3] + directionOffset[0]);
+    // 2N 1W
+    if(activePos%8 > 0 && activePos/8 > 1)
+        targetMoves.push_back(activePos + 2 * directionOffset[0] + directionOffset[3]);
 
     //check the moves for friendly pices
    for(const int move : targetMoves) {
@@ -467,47 +484,48 @@ void MoveGenerator::generateKnightAttack(const int activePos) {
     std::vector<int> targetMoves;
     //up 2 over 1
     //2N 1E
-    if(activePos%8 <7 && activePos/8 < 6) //check to see if at edge of board so we don't warp / segfault
+    if(activePos%8 <7 && activePos/8 > 1) //check to see if at edge of board so we don't warp / segfault
         knightAttackMap |= static_cast<uint64_t>(1) << activePos + 2 * directionOffset[0] + directionOffset[1];
     //2E 1N
-    if(activePos%8 < 6 && activePos/8 < 7)
+    if(activePos%8 < 6 && activePos/8 > 0)
         knightAttackMap |= static_cast<uint64_t>(1) << activePos + 2*directionOffset[1] + directionOffset[0];
     //2E 1S
-    if (activePos % 8 < 6 && activePos / 8 > 0) {
+    if (activePos % 8 < 6 && activePos / 8 < 7) {
         // 2E 1S
         knightAttackMap |= static_cast<uint64_t>(1) << activePos + 2 * directionOffset[1] + directionOffset[2];
     }
-    if (activePos % 8 < 7 && activePos / 8 > 1) {
+    if (activePos % 8 < 7 && activePos / 8 < 6) {
         // 2S 1E
         knightAttackMap |= static_cast<uint64_t>(1) << activePos + 2 * directionOffset[2] + directionOffset[1];
     }
-    if (activePos % 8 > 0 && activePos / 8 > 1) {
+    if (activePos % 8 > 0 && activePos / 8 < 6) {
         // 2S 1W
-        knightAttackMap |= static_cast<uint64_t>(1) << activePos + 2 * directionOffset[2] - directionOffset[1];
-    }
-    if (activePos % 8 > 1 && activePos / 8 > 0) {
-        // 2W 1S
-        knightAttackMap |= static_cast<uint64_t>(1) << activePos + 2 * directionOffset[3] - directionOffset[2];
+        knightAttackMap |= static_cast<uint64_t>(1) << activePos + 2 * directionOffset[2] + directionOffset[3];
     }
     if (activePos % 8 > 1 && activePos / 8 < 7) {
-        // 2W 1N
-        knightAttackMap |= static_cast<uint64_t>(1) << activePos + 2 * directionOffset[3] + directionOffset[1];
+        // 2W 1S
+        knightAttackMap |= static_cast<uint64_t>(1) << activePos + 2 * directionOffset[3] + directionOffset[2];
     }
-    if (activePos % 8 > 0 && activePos / 8 < 6) {
+    if (activePos % 8 > 1 && activePos / 8 > 0) {
+        // 2W 1N
+        knightAttackMap |= static_cast<uint64_t>(1) << activePos + 2 * directionOffset[3] + directionOffset[0];
+    }
+    if (activePos % 8 > 0 && activePos / 8 > 1) {
         // 2N 1W
-        knightAttackMap |= static_cast<uint64_t>(1) << activePos + 2 * directionOffset[0] - directionOffset[1];
+        knightAttackMap |= static_cast<uint64_t>(1) << activePos + 2 * directionOffset[0] + directionOffset[3];
     }
 }
 
 void MoveGenerator::generatePawnAttack(const int activePos, const color activeColor) {
     const int dirMultiplier = activeColor == white ? 1:-1;
+    const int dirOffset = activeColor == white? 0:2;
     //need to make sure that they are not at edges of board
-    if(pieceOnEdge[activePos] != (leftEdge | upperLeftCorner | lowerLeftCorner)) {
+    if(numSquareToEdge[activePos][3] !=0 && numSquareToEdge[activePos][dirOffset] != 0) {
         const int forwardLeft = directionOffset[3] + directionOffset[0] * dirMultiplier;
         const int targetSquare = forwardLeft + activePos;
         bitToOneAtPos(&pawnAttackMap, targetSquare);
     }
-    if(pieceOnEdge[activePos] != (rightEdge | upperRightCorner | lowerRightCorner)) {
+    if(numSquareToEdge[activePos][1] !=0 && numSquareToEdge[activePos][dirOffset] != 0) {
         const int forwardRight = directionOffset[1] + directionOffset[0] * dirMultiplier;
         const int targetSquare = forwardRight + activePos;
         bitToOneAtPos(&pawnAttackMap, targetSquare);

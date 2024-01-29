@@ -4,13 +4,18 @@
 
 #include "GameManager.h"
 
+#include <iostream>
+
 GameManager::GameManager() {
-    board = new SquareBoard;
+    board = new Board;
+    moveGen = new MoveGenerator(board);
+    board->setMoveGen(moveGen);
     interface = new GraphicalBoard(1000, 1000);
 }
 
 void GameManager::startup() {
     interface->init(board);
+    board->loadPosFromFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 }
 
 void GameManager::mainLoop() {
@@ -19,7 +24,7 @@ void GameManager::mainLoop() {
     bool completeMove = false;
     bool moveStart = false;
     bool movesGenerated = false;
-    move_stats move{};
+    move inputMove{};
     while(interface->isRunning()) {
         //Generate Moves
         //get input
@@ -33,11 +38,11 @@ void GameManager::mainLoop() {
                 continue;
             }
             if(!moveStart) {
-                move.start = input;
+                inputMove.startIndex = access(input.file, input.rank);
                 moveStart = true;
             }
             else {
-                move.end = input;
+                inputMove.endIndex = access(input.file, input.rank);
                 moveStart = false;
                 completeMove = true;
             }
@@ -47,22 +52,26 @@ void GameManager::mainLoop() {
         }
         //update
 
-        if(completeMove) {
-            if(board->isLegalMove(move.start, move.end) || false /*TODO: Players.bothBots?*/) {
-                board->movePiece(move.start, move.end);
+        /*if(completeMove) {
+            if(board->isLegalMove(inputMove.start, inputMove.end) || false TODO: Players.bothBots?) {
+                board->movePiece(inputMove.start, inputMove.end);
                 whiteTurn = !whiteTurn;
                 movesGenerated = false;
             }
 
-            move.end = {0,0};
-            move.start = {0,0};
+            inputMove.end = {0,0};
+            inputMove.start = {0,0};
             completeMove = false;
         }
+        */
         Draw:
         //draw
         BeginDrawing();
         interface->renderLoop();
         EndDrawing();
+        uint64_t nodes = board->perft(5);
+        std::cerr << nodes << std::endl;
+        break;
     }
 }
 
@@ -70,4 +79,5 @@ void GameManager::shutDown() {
     interface->shutdown();
     delete board;
     delete interface;
+
 }

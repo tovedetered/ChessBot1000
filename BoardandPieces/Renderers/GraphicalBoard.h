@@ -10,7 +10,8 @@
 #include <unordered_map>
 
 #include "../Pieces.h"
-#include "../Board/SquareBoard.h"
+#include "../Board/Board.h"
+#include "../../CommonUtilities.h"
 
 
 struct square {
@@ -24,7 +25,7 @@ class GraphicalBoard {
 public:
     GraphicalBoard(int screenWidth, int screenHeight);
     void renderLoop();
-    void init(SquareBoard* board_);
+    void init(Board* board_);
     static bool isRunning();
     static void shutdown();
     fileRank getPlayerInput();
@@ -46,7 +47,7 @@ private:
     Color lightColor{};
     Color darkColor{};
 
-    SquareBoard* board;
+    Board* board;
 };
 
 

@@ -36,7 +36,7 @@ public:
     void makeMove(move);
     void undoMove(move toUndo);
     uint64_t perft(int depth);
-
+    int getKingPos(color color_);
     void setMoveGen(class MoveGenerator* inGen);
 private:
 

@@ -30,7 +30,7 @@ void GraphicalBoard::renderLoop() {
             pos.x = file * (boardDimension.x/8);
             pos.y = rank * (boardDimension.y/8);
             drawSquare(squareColor, pos);
-            int piece = board->getPieceAtValue(board->access(file, rank));
+            int piece = board->getPieceAtSquare(access(file, rank));
             if(piece != 0) {
                 drawPiece(piece, {file, rank});
             }
@@ -38,7 +38,7 @@ void GraphicalBoard::renderLoop() {
     }
 }
 
-void GraphicalBoard::init(SquareBoard* board_) {
+void GraphicalBoard::init(Board* board_) {
     InitWindow(static_cast<int>(screenDimension.x), static_cast<int>(screenDimension.y), "Chess Bot 1000");
     SetTargetFPS(60);
     initPieceMap();

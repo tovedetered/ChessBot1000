@@ -5,7 +5,7 @@
 #ifndef GAMEMANAGER_H
 #define GAMEMANAGER_H
 
-#include "BoardandPieces/Board/SquareBoard.h"
+#include "BoardandPieces/Board/Board.h"
 #include "BoardandPieces/Renderers/GraphicalBoard.h"
 
 class GameManager {
@@ -15,8 +15,9 @@ public:
     void mainLoop();
     void shutDown();
 private:
-    SquareBoard* board;
+    Board* board;
     GraphicalBoard* interface;
+    MoveGenerator* moveGen;
 };
 
 

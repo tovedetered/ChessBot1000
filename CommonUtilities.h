@@ -117,4 +117,9 @@ inline void bitToOneAtPos(uint64_t* num, const uint64_t n) {
 }
 
 inline int access(const int file, const int rank) {return file + 8 * rank;}
+
+struct fileRank {
+    int file;
+    int rank;
+};
 #endif //COMMONUTILITIES_H

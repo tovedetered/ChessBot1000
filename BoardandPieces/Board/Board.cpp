@@ -15,12 +15,7 @@ Board::Board() {
 }
 
 Board::~Board() {
-    delete pieceListMap[pawn];
-    delete pieceListMap[knight];
-    delete pieceListMap[bishop];
-    delete pieceListMap[rook];
-    delete pieceListMap[queen];
-    delete pieceListMap[king];
+
 }
 
 gameState Board::getCurrentGameState() const {return currentState;}
@@ -57,10 +52,10 @@ void Board::loadPosFromFen(const std::string& fenString) {
             board[access(file, rank)] = fenToID[token];
             addPiceToMap(board[access(file, rank)], access(file,rank));
             if(token == 'k') {
-                kingsPos[0] = {access(file, rank)};
+                kingsPos[1] = {access(file, rank)};
             }
             else if(token == 'K') {
-                kingsPos[1] = {access(file, rank)};
+                kingsPos[0] = {access(file, rank)};
             }
             file ++;
         }
@@ -157,8 +152,8 @@ std::vector<piece_data> Board::getPiceColorList(const piece piece_, const color 
 }
 
 bool Board::isColor(const int piece, const color color) const {
-    if(color == white && pieceRef.colorMask & piece == pieceRef.white) return true;
-    if(color == black && pieceRef.colorMask & piece == pieceRef.black) return true;
+    if(color == white && (pieceRef.colorMask & piece) == pieceRef.white) return true;
+    if(color == black && (pieceRef.colorMask & piece) == pieceRef.black) return true;
     return false;
 }
 
@@ -169,7 +164,7 @@ color Board::getPieceColor(const int piece_) const {
 }
 
 piece Board::getPieceType(const int piece_) const {
-    int pieceType = piece_&pieceRef.typeMask; //isolate piece code
+    int pieceType = (piece_&pieceRef.typeMask); //isolate piece code
     const auto result = static_cast<piece>(pieceType);
     return result;
 }
@@ -334,9 +329,9 @@ uint64_t Board::perft(int depth) {
     std::vector<move> movesAtDepth = moveGen->generateMoves();
     uint64_t nodes = 0;
 
-    unsigned long numMoves = movesAtDepth.size();
+    uint64_t numMoves = movesAtDepth.size();
     if(depth == 1) {
-        return static_cast<uint64_t>(numMoves);
+        return numMoves;
     }
 
     for(int i = 0; i < numMoves; i++) {
@@ -345,6 +340,10 @@ uint64_t Board::perft(int depth) {
         undoMove(movesAtDepth[i]);
     }
     return nodes;
+}
+
+int Board::getKingPos(color color_) {
+    return color_ == white? kingsPos[0]:kingsPos[1];
 }
 
 void Board::setMoveGen(MoveGenerator* inGen) {

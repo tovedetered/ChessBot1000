@@ -122,4 +122,10 @@ struct fileRank {
     int file;
     int rank;
 };
+
+struct debugInfo {
+    int checks = 0;
+    int captures = 0;
+
+};
 #endif //COMMONUTILITIES_H

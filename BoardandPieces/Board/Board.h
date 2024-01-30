@@ -36,8 +36,11 @@ public:
     void makeMove(move);
     void undoMove(move toUndo);
     uint64_t perft(int depth);
+    uint64_t dividePerft(int depth);
     int getKingPos(color color_);
     void setMoveGen(class MoveGenerator* inGen);
+
+    debugInfo debug{};
 private:
 
     gameState currentState;
@@ -48,7 +51,7 @@ private:
     int kingsPos[2]{};
 
     int board[64]{};
-
+    std::string convertIndexToThing(int index);
     MoveGenerator* moveGen{};
 
     piece_list rooks;
@@ -71,6 +74,8 @@ private:
 
     void initCharMap();
     std::unordered_map<char, int> charRankMap;
+    std::unordered_map<int , char> fileToCharMAp;
+    std::unordered_map<int , char> rankToCharMap;
     void initRankMap();
     std::unordered_map<int, int> realToFakeRank;
 };

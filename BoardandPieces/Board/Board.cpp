@@ -219,10 +219,10 @@ void Board::makeMove(const move currentMove) {
     }
     else if(currentMove.flag == twoSquarePawnMove) {
         //need to set en pass index to one behind
+        int dirOff = getPieceColor(movingPiece) == white? 8:-8;
         const int backOffset = (currentMove.startIndex - currentMove.endIndex)/2;
-        const int enSquare = currentMove.endIndex - backOffset;
+        const int enSquare = currentMove.endIndex + dirOff;
         currentState.enPassantIndex = enSquare;
-        movePieceInMap(currentMove.startIndex, currentMove.endIndex, movingPiece);
         //then move piece
     }
     else if(currentMove.flag == enPassantCapture) {
@@ -330,17 +330,51 @@ uint64_t Board::perft(int depth) {
     uint64_t nodes = 0;
 
     uint64_t numMoves = movesAtDepth.size();
+
     if(depth == 1) {
         return numMoves;
     }
 
     for(int i = 0; i < numMoves; i++) {
         makeMove(movesAtDepth[i]);
+
         nodes += perft(depth - 1);
         undoMove(movesAtDepth[i]);
     }
     return nodes;
 }
+
+uint64_t Board::dividePerft(int depth) {
+    std::vector<move> movesAtDepth = moveGen->generateMoves();
+    uint64_t nodes = 0;
+
+    uint64_t numMoves = movesAtDepth.size();
+
+    if(depth == 1) {
+        return numMoves;
+    }
+
+    for(int i = 0; i < numMoves; i++) {
+        makeMove(movesAtDepth[i]);
+
+        nodes = perft(depth - 1);
+        std::cout << convertIndexToThing(movesAtDepth[i].startIndex) << " - "
+        << convertIndexToThing(movesAtDepth[i].endIndex) << ": "  << nodes << std::endl;
+        undoMove(movesAtDepth[i]);
+    }
+    return nodes;
+}
+
+std::string Board::convertIndexToThing(int index) {
+    int file = index%8;
+    int rank = index/8;
+
+    char cFile = fileToCharMAp[file];
+    char cRank = rankToCharMap[rank];
+
+    return std::string() + cFile +cRank;
+}
+
 
 int Board::getKingPos(color color_) {
     return color_ == white? kingsPos[0]:kingsPos[1];
@@ -349,6 +383,7 @@ int Board::getKingPos(color color_) {
 void Board::setMoveGen(MoveGenerator* inGen) {
     moveGen = inGen;
 }
+
 
 void Board::initPiceListMap() {
     pieceListMap.emplace(rook, &rooks);
@@ -372,7 +407,7 @@ void Board::removePiceFromMap(const int pieceValue, const int index) {
     if(pieceValue == 0) {
         return;
     }
-
+    debug.captures += 1;
     const piece_list* listOfPieces = pieceListMap[getPieceType(pieceValue)];
     std::vector<piece_data>* piecesOfColorAndPiece = listOfPieces->list.at(getPieceColor(pieceValue));
 
@@ -397,13 +432,12 @@ void Board::movePieceInMap(int startindex, int endIndex, int pieceValue) {
     std::vector<piece_data>* piecesOfColorAndPiece = listOfPieces->list.at(getPieceColor(pieceValue));
 
     for(auto & i : *piecesOfColorAndPiece) {
-        const piece_data currentPice = i;
-        if(currentPice.index == startindex && currentPice.piece == pieceValue) {
+        if(i.index == startindex && i.piece == pieceValue) {
             i = {pieceValue, endIndex};
             return;
         }
     }
-    std::cerr << "Moving Piece at" << startindex << "unsucessful";
+    std::cerr << "Moving Piece at " << startindex << " unsucessful";
     exit(-1);
 }
 
@@ -431,6 +465,15 @@ void Board::initCharMap() {
     charRankMap.emplace('f', 5);
     charRankMap.emplace('g', 6);
     charRankMap.emplace('h', 7);
+
+    fileToCharMAp.emplace(0, 'a');
+    fileToCharMAp.emplace(1, 'b');
+    fileToCharMAp.emplace(2, 'c');
+    fileToCharMAp.emplace(3, 'd');
+    fileToCharMAp.emplace(4, 'e');
+    fileToCharMAp.emplace(5, 'f');
+    fileToCharMAp.emplace(6, 'g');
+    fileToCharMAp.emplace(7, 'h');
 }
 
 void Board::initRankMap() {
@@ -442,4 +485,15 @@ void Board::initRankMap() {
     realToFakeRank.emplace(5, 2);
     realToFakeRank.emplace(6, 1);
     realToFakeRank.emplace(7, 0);
+
+    rankToCharMap = {
+        {0, '8'},
+        {1, '7'},
+        {2, '6'},
+        {3, '5'},
+        {4, '4'},
+        {5,'3'},
+        {6,'2'},
+        {7,'1'},
+    };
 }

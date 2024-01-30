@@ -69,8 +69,13 @@ void GameManager::mainLoop() {
         BeginDrawing();
         interface->renderLoop();
         EndDrawing();
-        uint64_t nodes = board->perft(5);
+        uint64_t nodes = board->perft(4); //correct to depth 3
+        //incorrect: c2-c3
+        //c2-c4
+        //e2-e3
+        //e2-e4
         std::cerr << nodes << std::endl;
+        std::cerr << board->debug.captures << " " << board->debug.checks << " " << std::endl;
         break;
     }
 }

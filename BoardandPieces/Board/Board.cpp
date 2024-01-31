@@ -351,6 +351,10 @@ uint64_t Board::dividePerft(int depth) {
     uint64_t numMoves = movesAtDepth.size();
 
     if(depth == 1) {
+        for(move genMove : movesAtDepth) {
+            std::cout << convertIndexToThing(genMove.startIndex) << " - "
+        << convertIndexToThing(genMove.endIndex) << ": "  << std::endl;
+        }
         return numMoves;
     }
 

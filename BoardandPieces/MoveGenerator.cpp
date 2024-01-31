@@ -221,7 +221,7 @@ void MoveGenerator::calcAttackMap() {
     int endDir = 8;
     //need to check the king things
     if(board->getPiceColorList(queen, position.opponentcolor).empty()) {
-        startDir = board->getPiceColorList(rook, position.opponentcolor).empty()? 0 : 4;
+        startDir = board->getPiceColorList(rook, position.opponentcolor).empty()? 4 : 0;
         endDir = board->getPiceColorList(bishop, position.opponentcolor).empty()? 4 : 8;
     }
     //for every direction check to see if a piece that could be attacking is
@@ -252,16 +252,28 @@ void MoveGenerator::calcAttackMap() {
                     //and it IS blocking the pin
                     //we just cannot take it
                     //Here we need to raise a look and continue
+                    int enTargetEast = -1;
+                    int enTargetWest = -1;
+                    if(numSquareToEdge[targetSquare][1] !=0) {
+                        enTargetEast = board->getPieceAtSquare(targetSquare + 1);
+                    }
+                    if(numSquareToEdge[targetSquare][3] != 0) {
+                        enTargetWest = board->getPieceAtSquare(targetSquare - 1);
+                    }
                     if(!alreadyPawnInDir) {
                         alreadyPawnInDir = true;
-                        if(board->getPieceType(targetPiece + 1) == pawn &&
-                            board->getPieceColor(targetPiece+1) == position.friendlyColor) {
-                            enPassFlag = true;
+                        if(enTargetEast != - 1) {
+                            if(board->getPieceType(enTargetEast) == pawn &&
+                            board->getPieceColor(enTargetEast) == position.friendlyColor) {
+                                enPassFlag = true;
                             }
-                        if(board->getPieceType(targetPiece - 1) == pawn &&
-                            board->getPieceColor(targetPiece - 1) == position.friendlyColor) {
-                            enPassFlag = true;
-                            }
+                        }
+                        if(enTargetWest != -1) {
+                            if(board->getPieceType(enTargetWest) == pawn &&
+                                board->getPieceColor(enTargetEast) == position.friendlyColor) {
+                                enPassFlag = true;
+                                }
+                        }
                         continue;
                     }
                     break;
@@ -271,7 +283,7 @@ void MoveGenerator::calcAttackMap() {
                 //see if freinds are blocking/are pinned
                 if(board->isColor(targetPiece, position.friendlyColor)) {
                     if(!friendInDir) {
-                        if(board->getPieceType(targetPiece) == pawn && enPassFlag) freindPawnInDir = true;
+                        if(board->getPieceType(targetPiece) == pawn) freindPawnInDir = true;
                         friendInDir = true;
                     }
                     else {
@@ -289,8 +301,13 @@ void MoveGenerator::calcAttackMap() {
                             position.pinRayMask |= rayMask;
                         }
                         else if(friendInDir && freindPawnInDir && (i == 1 || i == 3)) {
-                            position.enPassImposible = true;
-                            break;
+                            if(enPassFlag) {
+                                position.enPassImposible = true;
+                                break;
+                            }
+                            position.pinsExistInPos = true;
+                            //OR ing the pin mask to update it with current ray
+                            position.pinRayMask |= rayMask;
                         }
                         else {
                             //here enPass is impossible,

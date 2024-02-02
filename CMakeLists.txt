@@ -34,8 +34,26 @@ add_executable(ChessBot1000 main.cpp
         BoardandPieces/Board/Board.cpp
         BoardandPieces/Board/Board.h
         CommonUtilities.h
-        BoardandPieces/Pieces/piece_list.cpp
-        BoardandPieces/Pieces/piece_list.h
+        Pieces/piece_list.cpp
+        Pieces/piece_list.h
+        Pieces/Piece.cpp
+        Pieces/Piece.h
+        Pieces/Sliding_pieces/Queen.cpp
+        Pieces/Sliding_pieces/Queen.h
+        Pieces/Sliding_pieces/Rook.cpp
+        Pieces/Sliding_pieces/Rook.h
+        Pieces/Sliding_pieces/Bishop.cpp
+        Pieces/Sliding_pieces/Bishop.h
+        Pieces/Other_pieces/King.cpp
+        Pieces/Other_pieces/King.h
+        board_representations/SquareBoardRepresentation.cpp
+        board_representations/SquareBoardRepresentation.h
+        Pieces/PieceManager.cpp
+        Pieces/PieceManager.h
+        Pieces/Other_pieces/Knight.cpp
+        Pieces/Other_pieces/Knight.h
+        Pieces/Other_pieces/Pawn.cpp
+        Pieces/Other_pieces/Pawn.h
 )
 
 target_link_libraries(${PROJECT_NAME} raylib)

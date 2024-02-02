@@ -15,7 +15,7 @@ GameManager::GameManager() {
 
 void GameManager::startup() {
     interface->init(board);
-    board->loadPosFromFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+    board->loadPosFromFen("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8");
 }
 
 void GameManager::mainLoop() {
@@ -69,7 +69,7 @@ void GameManager::mainLoop() {
         BeginDrawing();
         interface->renderLoop();
         EndDrawing();
-        uint64_t nodes = board->perft(5); //correct to depth 3
+        uint64_t nodes = board->perft(3); //correct to depth 3
 
         //incorrect: c2-c3
         //c2-c4

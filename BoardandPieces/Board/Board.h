@@ -13,7 +13,7 @@
 #include "../MoveGenerator.h"
 #include "../Pieces.h"
 #include "../../CommonUtilities.h"
-#include "../Pieces/piece_list.h"
+#include "../../Pieces/piece_list.h"
 
 
 class Board {

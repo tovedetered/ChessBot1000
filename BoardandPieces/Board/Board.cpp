@@ -178,25 +178,31 @@ void Board::makeMove(const move currentMove) {
     currentState.mostRecentPromoPiece = -1;
     currentState.enPassantIndex = -1;
     currentState.castlePlayed.clear();
+    bool promoted = false;
     //Catleing
     if(currentMove.flag != normal && static_cast<int>(currentMove.flag) < 5) {
         int movementMultiplier = 0;
+        int newRookSquare;
         switch (static_cast<int>(currentMove.flag)) {
         case 1: //W-KS
             miscSquare = 63;
             movementMultiplier = 1;
+            newRookSquare = 61;
             break;
         case 2:
             miscSquare = 56;
             movementMultiplier = -1;
+            newRookSquare = 59;
             break;
         case 3:
             miscSquare = 7;
             movementMultiplier = 1;
+            newRookSquare = 5;
             break;
         case 4:
             miscSquare = 0;
             movementMultiplier = -1;
+            newRookSquare = 3;
             break;
         default:
             std::cerr << "WTF how the hell did this happen???";
@@ -204,13 +210,13 @@ void Board::makeMove(const move currentMove) {
         }
         const int targetRook = board[miscSquare];
         currentState.castlePlayed.rookStartIndex = miscSquare;
+        currentState.castlePlayed.rookType = targetRook;
 
         //remove Rook from the board
         board[miscSquare] = 0;
 
         //put the rook on its new square
         //king handled below
-        const int newRookSquare = miscSquare - 2*movementMultiplier;
 
         board[newRookSquare] = targetRook;
         movePieceInMap(miscSquare, newRookSquare, targetRook);
@@ -237,8 +243,10 @@ void Board::makeMove(const move currentMove) {
     else if(static_cast<int>(currentMove.flag) > 6) {
         const color pieceColor = getPieceColor(movingPiece);
         piece_data pieceData{};
+        currentState.mostRecentPromoPiece = movingPiece;
         //remove the pawn
         removePiceFromMap(movingPiece, currentMove.startIndex);
+        promoted = true;
         switch (static_cast<int>(currentMove.flag)) {
         case 7:
             //Queen
@@ -272,7 +280,9 @@ void Board::makeMove(const move currentMove) {
     if(removedPiece != 0) {
         currentState.pieceCaptureInMove = removedPiece;
     }
-    movePieceInMap(currentMove.startIndex, currentMove.endIndex, movingPiece);
+    if(!promoted) {
+        movePieceInMap(currentMove.startIndex, currentMove.endIndex, movingPiece);
+    }
     board[currentMove.endIndex] = movingPiece;
 
     gameHistory.emplace(currentState);
@@ -306,7 +316,7 @@ void Board::undoMove(move toUndo) {
     }
     else { //promotion happened
         board[startIndex] = currentState.mostRecentPromoPiece;
-        addPiceToMap(static_cast<int>(currentState.colorMove) | static_cast<int>(pawn), startIndex);
+        addPiceToMap(currentState.mostRecentPromoPiece, startIndex);
         removePiceFromMap(undoingPiece, endIndex);
     }
 
@@ -337,7 +347,6 @@ uint64_t Board::perft(int depth) {
 
     for(int i = 0; i < numMoves; i++) {
         makeMove(movesAtDepth[i]);
-
         nodes += perft(depth - 1);
         undoMove(movesAtDepth[i]);
     }
@@ -362,7 +371,7 @@ uint64_t Board::dividePerft(int depth) {
         makeMove(movesAtDepth[i]);
 
         nodes = perft(depth - 1);
-        std::cout << convertIndexToThing(movesAtDepth[i].startIndex) << " - "
+        std::cout << convertIndexToThing(movesAtDepth[i].startIndex)
         << convertIndexToThing(movesAtDepth[i].endIndex) << ": "  << nodes << std::endl;
         undoMove(movesAtDepth[i]);
     }

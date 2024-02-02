@@ -105,7 +105,7 @@ struct piecesDataThing {
 };
 
 inline bool checkValueAtPos(const uint64_t num, const uint64_t n) {
-    return static_cast<bool>((num << n) & static_cast<uint64_t>(1));
+    return static_cast<bool>((num >> n) & static_cast<uint64_t>(1));
 }
 
 inline void flipBitAtPos(uint64_t* num, const uint64_t n) {
@@ -127,5 +127,10 @@ struct debugInfo {
     int checks = 0;
     int captures = 0;
 
+};
+
+struct create_piece_data {
+    color pieceColor;
+    piece type;
 };
 #endif //COMMONUTILITIES_H

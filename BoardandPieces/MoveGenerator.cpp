@@ -427,7 +427,7 @@ void MoveGenerator::generateSlideMove(int activePos, int startDirIndex, int endD
 
             if(board->isColor(targetPiece, position.friendlyColor)) break;
             const bool capture = targetPiece != 0;
-            const bool stopCheck = position.inCheck? checkValueAtPos(position.checkRayMask, targetSquare) !=0:false;
+            const bool stopCheck = position.inCheck? checkValueAtPos(position.checkRayMask, targetSquare):false;
             if(stopCheck || !position.inCheck) {
                 legalMoves.push_back({activePos, targetSquare});
             }
@@ -494,9 +494,20 @@ std::vector<move> MoveGenerator::generateKnightMove(const int activePos) const {
 
     //check the moves for friendly pices
    for(const int move : targetMoves) {
-        if(!board->isColor(board->getPieceAtSquare(move), knightColor)) {
-            moves.push_back({activePos, move});
-        }
+       if(checkValueAtPos(position.pinRayMask, activePos)) {
+           break;
+       }
+       if(board->isColor(board->getPieceAtSquare(move), knightColor)) {
+           continue;
+       }
+       if(!position.inCheck) {
+           moves.push_back({activePos, move});
+       }
+       else { //not pinned and in check and the target is empty or opponent
+           if(checkValueAtPos(position.checkRayMask, move)) {
+               moves.push_back({activePos, move});
+           }
+       }
    }
     return moves;
 }

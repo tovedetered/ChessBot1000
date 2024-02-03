@@ -96,4 +96,5 @@ void SquareBoardRepresentation::addPiece(const piece_data pieceToAdd) {
 
     //has to be the pointer becasuse we are modifying the vector
     std::vector<Piece*>* listToAddTo = pieceListMap[addType]->getVectorList(addColor);
+    listToAddTo->push_back(toBeAdded);
 }

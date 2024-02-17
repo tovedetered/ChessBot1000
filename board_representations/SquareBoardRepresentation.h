@@ -25,6 +25,7 @@ public:
     void removePiece(int squareToRemove);
     void addPiece(piece_data pieceToAdd);
 
+    Piece* passThroughPiece(piece_data pieceToPassThrough) const;
 private:
     Piece* board[64]{};
 

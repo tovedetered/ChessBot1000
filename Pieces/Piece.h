@@ -6,17 +6,19 @@
 #define PIECE_H
 #include "PieceManager.h"
 #include "../CommonUtilities.h"
+#include "../board_representations/SquareBoardRepresentation.h"
 
 
 class Piece {
 public:
+    virtual ~Piece() = default;
+    [[nodiscard]] int getIndex() const;
+    [[nodiscard]] piece getType() const;
+    [[nodiscard]] color getColor() const;
     Piece(int index, color pieceColor, piece type);
-    int getIndex();
     void setIndex(int index);
-    piece getType();
-    color getColor();
-
-private:
+    [[nodiscard]] int getPieceValue() const;
+protected:
     int index;
     piece type;
     color pieceColor;

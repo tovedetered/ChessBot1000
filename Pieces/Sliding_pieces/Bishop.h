@@ -4,13 +4,14 @@
 
 #ifndef BISHOP_H
 #define BISHOP_H
+#include "SlidingPiece.h"
 #include "../Piece.h"
 
 
-class Bishop : public Piece{
+class Bishop : public SlidingPiece{
 public:
     Bishop(int index, color pieceColor, piece type)
-        : Piece(index, pieceColor, type) {
+        : SlidingPiece(index, pieceColor, type) {
 
     }
 };

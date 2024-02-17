@@ -12,8 +12,8 @@
 class PieceManager {
 public:
     PieceManager() = default;
-    create_piece_data getPieceData(int piece) const;
-    Piece* getPiece(int piece, int index) const;
+    [[nodiscard]] create_piece_data getPieceData(int piece) const;
+    [[nodiscard]] Piece* getPiece(int piece, int index) const;
 private:
     pieces piece_ref;
 };

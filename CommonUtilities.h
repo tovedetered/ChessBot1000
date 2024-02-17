@@ -66,6 +66,7 @@ struct gameState {
     move mostRecentMove;
     int pieceCaptureInMove;
     int mostRecentPromoPiece;
+    int kingsPos[2];
 
     void clear() {
         colorMove = noMove;
@@ -133,4 +134,6 @@ struct create_piece_data {
     color pieceColor;
     piece type;
 };
+
+
 #endif //COMMONUTILITIES_H

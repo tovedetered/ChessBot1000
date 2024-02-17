@@ -11,8 +11,9 @@ class Pawn : public Piece {
 public:
     Pawn(int index, color pieceColor, piece type)
         : Piece(index, pieceColor, type) {
-
     }
+
+    std::vector<move> getMoves(SquareBoardRepresentation* board) override;
 };
 
 

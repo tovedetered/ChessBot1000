@@ -4,13 +4,14 @@
 
 #ifndef QUEEN_H
 #define QUEEN_H
+#include "SlidingPiece.h"
 #include "../Piece.h"
 
 
-class Queen : public Piece{
+class Queen : public SlidingPiece{
 public:
     Queen(int index, color pieceColor, piece type)
-        : Piece(index, pieceColor, type) {
+        : SlidingPiece(index, pieceColor, type) {
 
     }
 };

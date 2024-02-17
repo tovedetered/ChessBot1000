@@ -35,8 +35,8 @@ SquareBoardRepresentation::~SquareBoardRepresentation() {
 //Takes an input of a board represented by integers and converts it to objects (this is due to the fen init)
 void SquareBoardRepresentation::updateBoard(const int numBoard[64]) {
     for(int i = 0; i < 64; i++) {
-        int item = numBoard[i];
-        board[i] = manager.getPiece(item);
+        const int item = numBoard[i];
+        addPiece({item, i});
     }
 }
 
@@ -94,6 +94,16 @@ void SquareBoardRepresentation::addPiece(const piece_data pieceToAdd) {
     color addColor = toBeAdded.getColor();
     piece addType = toBeAdded.getType();
 
+    if(addType == king) {
+        if(addColor == white) {
+
+        }
+    }
     //has to be the pointer becasuse we are modifying the vector
     std::vector<Piece*>* listToAddTo = pieceListMap[addType]->getVectorList(addColor);
+    listToAddTo->push_back(toBeAdded);
+}
+
+Piece* SquareBoardRepresentation::passThroughPiece(const piece_data pieceToPassThrough) const {
+    return manager.getPiece(pieceToPassThrough.piece, pieceToPassThrough.index);
 }

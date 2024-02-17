@@ -7,7 +7,6 @@
 #include <stack>
 #include <unordered_map>
 #include <vector>
-#include <cstdio>
 #include <string>
 
 #include "../MoveGenerator.h"

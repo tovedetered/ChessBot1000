@@ -34,8 +34,9 @@ SOFTWARE.*/
 
 #include "Renderers/GraphicalBoard.h"
 
-MoveGenerator::MoveGenerator(Board* board) {
+MoveGenerator::MoveGenerator(SquareBoardRepresentation* board, BoardManager* board_manager) {
     this->board = board;
+    this->board_manager = board_manager;
     position.clear();
     precomputeMoveData();
     initPieceOnEdge();
@@ -56,9 +57,6 @@ std::vector<move> MoveGenerator::generateMoves() {
 
     if(position.inDoubleCheck) {
         return legalMoves;
-    }
-    if(position.inCheck) {
-        board->debug.checks += 1;
     }
     generateSlidingMoves();
     generatePawnMoves();
@@ -122,7 +120,7 @@ void MoveGenerator::init() {
     attackMap = 0;
     knightAttackMap = 0;
     kingAttackMap = 0;
-    game = board->getCurrentGameState();
+    game = board_manager->getCurrentState();
 }
 
 void MoveGenerator::updatePostiton() {
@@ -130,8 +128,8 @@ void MoveGenerator::updatePostiton() {
     position.friendlyColor = game.colorMove;
     position.opponentcolor = position.friendlyColor == white? black:white;
     position.enPassantIndex = game.enPassantIndex;
-    position.activeKingIndex = board->getKingPos(position.friendlyColor);
-    position.opponentKingIndex = board->getKingPos(position.opponentcolor);
+    position.activeKingIndex = board->getKingSquare(position.friendlyColor);
+    position.opponentKingIndex = board->getKingSquare(position.opponentcolor);
     position.castleAbility[0] = checkValueAtPos(game.castleAbility, 0);
     position.castleAbility[1] = checkValueAtPos(game.castleAbility, 1);
     position.castleAbility[2] = checkValueAtPos(game.castleAbility, 2);
@@ -167,8 +165,8 @@ void MoveGenerator::precomputeMoveData() {
 
 int MoveGenerator::access(const int file, const int rank) {return file + 8 * rank;}
 
-bool MoveGenerator::ableToMoveInDir(const int piece_, const bool diagonalMovement) const {
-    const piece pieceType = board->getPieceType(piece_);
+bool MoveGenerator::ableToMoveInDir(Piece* pieceToCheck, const bool diagonalMovement) {
+    const piece pieceType = pieceToCheck->getType();
     if(diagonalMovement && (pieceType == bishop || pieceType == queen)) return true;
     if(!diagonalMovement && (pieceType == rook || pieceType == queen)) return true;
     return false;
@@ -220,9 +218,9 @@ void MoveGenerator::calcAttackMap() {
     int startDir = 0;
     int endDir = 8;
     //need to check the king things
-    if(board->getPiceColorList(queen, position.opponentcolor).empty()) {
-        startDir = board->getPiceColorList(rook, position.opponentcolor).empty()? 4 : 0;
-        endDir = board->getPiceColorList(bishop, position.opponentcolor).empty()? 4 : 8;
+    if(board->getPieceList(queen, position.opponentcolor).empty()) {
+        startDir = board->getPieceList(rook, position.opponentcolor).empty()? 4 : 0;
+        endDir = board->getPieceList(bishop, position.opponentcolor).empty()? 4 : 8;
     }
     //for every direction check to see if a piece that could be attacking is
     for(int i = startDir; i < endDir; i++) {
@@ -239,12 +237,12 @@ void MoveGenerator::calcAttackMap() {
         //check sliding pieces
         for(int j = 0; j < numSquare; j++) {
             const int targetSquare = position.activeKingIndex + directionOffset[i] * (j+1);
-            const int targetPiece = board->getPieceAtSquare(targetSquare);
+            Piece* targetPiece = board->getPieceAtSquare(targetSquare);
             rayMask |= 1ul << targetSquare;
-            if(board->getPieceType(targetPiece) == pawn &&
-                board->getPieceColor(targetPiece) == position.opponentcolor) {
+            if(targetPiece->getType() == pawn &&
+                targetPiece->getColor() == position.opponentcolor) {
                 //see if enpassant square is adjacent to it
-                if(const int backwardsDir = board->getPieceColor(targetPiece) == white? 8:-8;
+                if(const int backwardsDir = targetPiece->getColor() == white? 8:-8;
                     targetSquare + backwardsDir == position.enPassantIndex) {
                     //if it is then check to see if it can be captured by a pawn, and if so raise a flag
                     //It cannot be the freindly color being en-passant'ed in this case

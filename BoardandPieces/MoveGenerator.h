@@ -6,7 +6,9 @@
 #define MOVEGENERATOR_H
 #include <vector>
 #include "Pieces.h"
-#include "Board/Board.h"
+#include "../Pieces/Piece.h"
+#include "../BoardManager.h"
+#include "../board_representations/SquareBoardRepresentation.h"
 #include "../CommonUtilities.h"
 
 struct positionDetails {
@@ -56,7 +58,7 @@ enum edgeData {
 };
 class MoveGenerator {
 public:
-    explicit MoveGenerator(class Board* board);
+    explicit MoveGenerator(SquareBoardRepresentation* board, BoardManager* board_manager);
     std::vector<move> generateMoves();
 
 private:
@@ -77,7 +79,8 @@ private:
     void init();
     void updatePostiton();
 
-    class Board* board;
+    SquareBoardRepresentation* board;
+    BoardManager* board_manager;
 
     void calcAttackMap();
     void calcSlideAttackMap();
@@ -100,7 +103,7 @@ private:
     void precomputeMoveData();
     std::vector<std::vector<int>> numSquareToEdge;
     static int access(int file, int rank); //x,y
-    bool ableToMoveInDir(int piece_, bool diagonalMovement) const;
+    static bool ableToMoveInDir(Piece* piece_, bool diagonalMovement);
     bool IsMoveAlongRay(int dir, int start, int target) const;
 };
 
